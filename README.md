@@ -45,6 +45,8 @@ The more games you leave behind, the less its opening shots look like guesses.
 - [HTTP API](#http-api)
 - [Project layout](#project-layout)
 - [The AI's memory on disk](#the-ais-memory-on-disk)
+- [About](#about)
+- [License](#license)
 - [Troubleshooting](#troubleshooting)
 
 ---
@@ -378,6 +380,21 @@ as readable JSON.
 
 Deleting `data/` is always safe. The opponent simply goes back to playing
 blind.
+
+---
+
+## About
+
+Abyssal Battleships is a small, self-contained Battleships game built with a
+vanilla JavaScript front end and a Node.js server. Its opponent uses persistent
+vector memory to learn where you hide your fleet across games. The project is
+maintained by [dgdev25](https://github.com/dgdev25).
+
+## License
+
+This project is released under the [MIT License](LICENSE). The bundled audio
+assets have their own provenance and licensing notes in
+[`public/audio/README.md`](public/audio/README.md).
 
 ---
 

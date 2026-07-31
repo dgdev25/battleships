@@ -2,6 +2,8 @@
   "name": "abyssal-battleships",
   "version": "0.1.0",
   "description": "Battleships against a ruvector vector-memory opponent",
+  "license": "MIT",
+  "author": "dgdev25",
   "main": "src/server.mjs",
   "scripts": {
     "start": "node src/server.mjs",
