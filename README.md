@@ -207,6 +207,11 @@ random. **Clear** starts the deployment over.
 fires back — one shot each, every turn. Sink all five enemy ships before it
 sinks yours.
 
+The **Return-fire tempo** slider changes the pause between your impact and the
+opponent's launch from 0.2 to 2.5 seconds. Missile flight time stays intact, so
+the whistle still reaches the impact naturally. The setting is remembered by
+the browser.
+
 **4. Play again.** Whoever wins, the board you used is written into the
 opponent's memory before the next game starts. That is the point: the game you
 just played is the reason the next one is harder.
@@ -336,8 +341,10 @@ battleships/
 │   ├── index.html    The whole page
 │   ├── app.js        Deployment, firing, and the instrument readouts
 │   ├── scoreboard.js Stadium scoreboard built from real seven-segment digits
-│   ├── fx.js         Impact effects
-│   ├── sfx.js        Battle audio, synthesised in the browser — no sound files
+│   ├── ships.js      Oriented fleet geometry and shaped hull overlays
+│   ├── fx.js         Finite fireball, smoke, spark, and water effects
+│   ├── sfx.js        Recorded explosion plus procedural battle audio
+│   ├── audio/        Bundled public-domain field recording and source notes
 │   └── styles.css    Sonar HUD
 ├── assets/           Diagrams used by this README
 ├── start.sh          The launcher
@@ -345,8 +352,10 @@ battleships/
 └── logs/             Server logs (gitignored)
 ```
 
-Every sound in the game is generated in the browser with the Web Audio API.
-There are no audio files in this repository.
+The explosion body is a bundled 24 KB public-domain field recording from
+Wikimedia Commons. Web Audio layers in the crack, sub-bass, rumble, debris,
+missile whistle, air rush, and water splash; it also supplies a procedural
+explosion fallback. See `public/audio/README.md` for provenance and checksum.
 
 ---
 

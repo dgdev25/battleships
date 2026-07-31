@@ -98,6 +98,57 @@ header.top { display: flex; align-items: center; justify-content: space-between;
   gap: 3px;
   aspect-ratio: 1;
 }
+.ship-layer {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  display: grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(10, 1fr); gap: 3px;
+  --ship-main: #308f96;
+  --ship-edge: #74ebe1;
+  --ship-dark: #102f37;
+}
+.ship-layer.enemy {
+  --ship-main: #9e354b;
+  --ship-edge: #ff899c;
+  --ship-dark: #3a111c;
+}
+.ship-piece { position: relative; min-width: 0; min-height: 0; opacity: .92; }
+.ship-piece::before {
+  content: ""; position: absolute; inset: 9%;
+  background:
+    linear-gradient(115deg, #ffffff25, transparent 35%),
+    linear-gradient(180deg, var(--ship-edge), var(--ship-main) 30%, var(--ship-dark));
+  border: 1px solid var(--ship-edge);
+  box-shadow: inset 0 0 9px #ffffff28, 0 2px 8px #000b;
+}
+.ship-piece.horizontal::before { clip-path: polygon(0 50%, 7% 14%, 87% 14%, 100% 50%, 87% 86%, 7% 86%); }
+.ship-piece.vertical::before { clip-path: polygon(50% 0, 86% 7%, 86% 87%, 50% 100%, 14% 87%, 14% 7%); }
+.ship-deck, .ship-bridge, .ship-wake { position: absolute; display: block; }
+.ship-deck { background: #d7fff933; border: 1px solid #e8fffb70; border-radius: 3px; }
+.horizontal .ship-deck { left: 23%; right: 17%; top: 33%; bottom: 33%; }
+.vertical .ship-deck { top: 23%; bottom: 17%; left: 33%; right: 33%; }
+.ship-bridge {
+  width: min(18%, 16px); aspect-ratio: 1; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  border-radius: 2px; background: var(--ship-dark); border: 1px solid var(--ship-edge);
+  box-shadow: 0 0 5px #000b;
+}
+.ship-wake { opacity: .45; }
+.horizontal .ship-wake {
+  right: 92%; top: 38%; bottom: 38%; width: 18%;
+  background: linear-gradient(90deg, transparent, #b9f6ff99); clip-path: polygon(0 0, 100% 35%, 100% 65%, 0 100%);
+}
+.vertical .ship-wake {
+  bottom: 92%; left: 38%; right: 38%; height: 18%;
+  background: linear-gradient(0deg, transparent, #b9f6ff99); clip-path: polygon(0 0, 35% 100%, 65% 100%, 100% 0);
+}
+.ship-submarine::before { inset: 22% 7%; border-radius: 50%; clip-path: none; }
+.ship-submarine.vertical::before { inset: 7% 22%; }
+.ship-submarine .ship-deck { display: none; }
+.ship-submarine .ship-bridge { border-radius: 50%; width: 13%; }
+.ship-carrier .ship-deck { background: linear-gradient(90deg, transparent 48%, #eaffff55 49% 51%, transparent 52%), #d7fff91c; }
+.ship-carrier.vertical .ship-deck { background: linear-gradient(0deg, transparent 48%, #eaffff55 49% 51%, transparent 52%), #d7fff91c; }
+.ship-destroyer::before { inset: 15% 5%; }
+.ship-destroyer.vertical::before { inset: 5% 15%; }
+.ship-piece.is-sunk { opacity: .72; filter: grayscale(.55); }
+.ship-piece.is-sunk::before { --ship-main: #71301f; --ship-edge: #ff7a3c; --ship-dark: #260e09; }
 .cell {
   position: relative;
   border: 1px solid #1d293a;
@@ -106,6 +157,7 @@ header.top { display: flex; align-items: center; justify-content: space-between;
   padding: 0; cursor: default;
   transition: background .16s, border-color .16s, transform .12s;
 }
+.cell.spent { z-index: 3; }
 .grid.live .cell:not(.spent) { cursor: crosshair; }
 .grid.live .cell:not(.spent):hover { border-color: var(--color-hull); background: #0d1b26; transform: scale(1.06); }
 .cell.ship { background: linear-gradient(#12303a, #0d2029); border-color: #2fe0cf5c; }
@@ -129,7 +181,7 @@ header.top { display: flex; align-items: center; justify-content: space-between;
    The arm only animates while .on — an invisible element with a live
    animation still keeps the compositor awake for nothing. */
 .sweep {
-  position: absolute; inset: 0; pointer-events: none; border-radius: 8px; overflow: hidden;
+  position: absolute; inset: 0; z-index: 4; pointer-events: none; border-radius: 8px; overflow: hidden;
   opacity: 0; visibility: hidden;
   transition: opacity .25s, visibility 0s linear .25s;
 }
@@ -208,14 +260,17 @@ header.top { display: flex; align-items: center; justify-content: space-between;
 .sb-clock .seg-digit { width: 30px; height: 54px; }
 .sb-turn .seg-digit { width: 24px; height: 42px; }
 
+/* The bulb glow is a box-shadow, not a filter. A CSS filter gives every element
+   it touches its own render surface — at 126 segments, transitioned, that was
+   the most expensive thing on the page. Only opacity transitions now. */
 .seg-digit i {
   position: absolute; display: block; border-radius: 2px;
-  background: currentColor; opacity: .055; transition: opacity .12s, filter .12s;
+  background: currentColor; opacity: .055; transition: opacity .12s;
 }
 .seg-digit.tone-red { color: var(--bulb-red); }
 .seg-digit.tone-green { color: var(--bulb-green); }
 .seg-digit.tone-amber { color: var(--bulb-amber); }
-.seg-digit i.on { opacity: 1; filter: drop-shadow(0 0 6px currentColor); }
+.seg-digit i.on { opacity: 1; box-shadow: 0 0 7px currentColor; }
 
 .seg-digit .seg-a { left: 16%; right: 16%; top: 0; height: 11%; }
 .seg-digit .seg-b { right: 0; top: 8%; width: 13%; height: 38%; }
@@ -258,6 +313,21 @@ button:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
 .hash { font-family: var(--font-mono); font-size: .6875rem; color: var(--color-deep); overflow-wrap: anywhere; }
 .verdict.ok { color: var(--color-hull); }
 .verdict.bad { color: var(--color-enemy); }
+.tempo-control { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--color-line); }
+.tempo-copy { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.tempo-copy output { color: var(--color-hull); font-size: .8rem; }
+.tempo-control input[type="range"] {
+  width: 100%; height: 4px; margin: 10px 0 8px; padding: 0; border: 0; border-radius: 3px;
+  appearance: none; background: linear-gradient(90deg, var(--color-hull), var(--color-deep)); cursor: ew-resize;
+}
+.tempo-control input[type="range"]::-webkit-slider-thumb {
+  appearance: none; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--color-ink); border: 3px solid var(--color-hull); box-shadow: 0 0 10px #2fe0cf66;
+}
+.tempo-control input[type="range"]::-moz-range-thumb {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--color-ink); border: 3px solid var(--color-hull); box-shadow: 0 0 10px #2fe0cf66;
+}
 
 /* ---------- telemetry ---------- */
 .stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
@@ -277,7 +347,11 @@ button:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
 .scope-sweep { position: absolute; inset: 0; }
 .scope-sweep::before { content: ""; position: absolute; inset: 0; background: conic-gradient(from 0deg, #2fe0cf00 0deg, #2fe0cf00 300deg, #2fe0cf30 358deg, #2fe0cf00 360deg); animation: sweep 3.6s linear infinite; will-change: transform; }
 
-.log { max-height: 190px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 4px; font-family: var(--font-mono); font-size: .6875rem; }
+/* Containment keeps a repaint inside the box that changed instead of letting it
+   invalidate siblings up the tree. Layout/style only — paint containment would
+   clip the ping rings and the scoreboard's pop. */
+.grid, .scoreboard, .stat-grid { contain: layout style; }
+.log { max-height: 190px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 4px; font-family: var(--font-mono); font-size: .6875rem; contain: content; }
 .log p { margin: 0; color: var(--color-dim); }
 .log p b { color: var(--color-ink); font-weight: 500; }
 .log p.hit b { color: var(--color-hit); }
@@ -305,9 +379,31 @@ details .muted { margin-top: 8px; }
   border: 1.5px solid #7fd8ff; box-shadow: 0 0 14px #7fd8ff55 inset;
   animation: splash-out .8s ease-out forwards;
 }
+.fx-splash::before {
+  content: ""; position: absolute; left: 50%; bottom: 45%;
+  width: calc(var(--cell) * .42); height: calc(var(--cell) * 1.8);
+  border-radius: 50% 50% 42% 42%; transform-origin: 50% 100%;
+  background: linear-gradient(to top, #4fbfffb0, #d8f6ffef 55%, #ffffff00);
+  animation: water-plume .72s cubic-bezier(.15, .7, .25, 1) forwards;
+}
+.fx-droplet {
+  position: absolute; left: 50%; top: 50%; width: 3px; height: 8px; border-radius: 60%;
+  background: #c9f2ff; box-shadow: 0 0 5px #65cfff;
+  animation: droplet-fly .82s cubic-bezier(.15, .55, .55, 1) forwards;
+}
 @keyframes splash-out {
   0% { transform: translate(-50%, -50%) scale(.25); opacity: .9; }
   100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+}
+@keyframes water-plume {
+  0% { transform: translate(-50%, 30%) scale(.25, .1); opacity: 0; }
+  28% { transform: translate(-50%, 0) scale(.85, 1); opacity: 1; }
+  100% { transform: translate(-50%, 22%) scale(1.15, .4); opacity: 0; }
+}
+@keyframes droplet-fly {
+  0% { transform: translate(-50%, -50%) scale(.5); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) rotate(140deg) scale(.15); opacity: 0; }
 }
 
 .fx-blast { width: 0; height: 0; }
@@ -325,10 +421,35 @@ details .muted { margin-top: 8px; }
 .fx-blast-big::before { animation-duration: .8s; }
 .fx-blast-big::after { border-color: #ff8fa3; animation-duration: 1.2s; }
 
-.fx-blast i {
+.fx-fireball, .fx-smoke {
+  position: absolute; left: 50%; top: 50%; display: block; border-radius: 50%;
+}
+.fx-fireball {
+  width: calc(var(--cell) * 1.15); height: calc(var(--cell) * 1.15);
+  background: radial-gradient(circle at 42% 38%, #fff 0 8%, #fff4b5 15%, #ffae35 42%, #e83c16 67%, transparent 72%);
+  mix-blend-mode: screen;
+  animation: fireball-bloom .72s cubic-bezier(.15, .7, .25, 1) forwards;
+}
+.fx-smoke {
+  width: calc(var(--cell) * .95); height: calc(var(--cell) * .95);
+  background: radial-gradient(circle at 42% 38%, #78675ad9, #302d2dd4 52%, #171a1ca0 68%, transparent 72%);
+  animation: smoke-rise 1.25s ease-out forwards;
+}
+.fx-blast .fx-spark {
   position: absolute; left: 50%; top: 50%; width: 3px; height: 3px; border-radius: 1px;
   background: #ffcf7a; box-shadow: 0 0 6px #ffb454;
   animation: shard-fly .75s cubic-bezier(.15, .8, .35, 1) forwards;
+}
+@keyframes fireball-bloom {
+  0% { transform: translate(-50%, -50%) scale(.08); opacity: 0; }
+  18% { opacity: 1; }
+  62% { transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(var(--s)); opacity: .92; }
+  100% { transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(calc(var(--s) * 1.18)); opacity: 0; }
+}
+@keyframes smoke-rise {
+  0% { transform: translate(-50%, -45%) scale(.2); opacity: 0; }
+  20% { opacity: .85; }
+  100% { transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(var(--s)); opacity: 0; }
 }
 @keyframes blast-core {
   0% { transform: translate(-50%, -50%) scale(.15); opacity: 1; }

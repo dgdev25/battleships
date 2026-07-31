@@ -56,10 +56,23 @@ function spawn(cell, className, life) {
   return node;
 }
 
-// Water hit: a ring and a small plume, nothing dramatic.
+// Water hit: a pressure ring, a bright central plume, and ballistic droplets.
 export function splash(cell) {
   if (idle()) return;
-  spawn(cell, 'fx fx-splash', 800);
+  const node = spawn(cell, 'fx fx-splash', 1050);
+  if (!node) return;
+  const batch = document.createDocumentFragment();
+  for (let i = 0; i < 10; i++) {
+    const drop = document.createElement('i');
+    drop.className = 'fx-droplet';
+    const angle = (Math.PI * 2 * i) / 10 + Math.random() * 0.25;
+    const distance = 18 + Math.random() * 28;
+    drop.style.setProperty('--x', `${Math.cos(angle) * distance}px`);
+    drop.style.setProperty('--y', `${Math.sin(angle) * distance - 14 - Math.random() * 18}px`);
+    drop.style.animationDelay = `${Math.random() * 70}ms`;
+    batch.appendChild(drop);
+  }
+  node.appendChild(batch);
 }
 
 // Direct hit: flash core, shockwave, and debris thrown outward.
@@ -69,10 +82,31 @@ export function explode(cell, { big = false } = {}) {
   const node = spawn(cell, `fx fx-blast${big ? ' fx-blast-big' : ''}`, life);
   if (!node) return;
   const shards = big ? 12 : 8;
-  // one insertion instead of one per shard
+  const smokeClouds = big ? 7 : 5;
+  const fireballs = big ? 4 : 3;
+  // One insertion for the entire effect keeps its richer particle count cheap.
   const batch = document.createDocumentFragment();
+  for (let i = 0; i < fireballs; i++) {
+    const fireball = document.createElement('b');
+    fireball.className = 'fx-fireball';
+    fireball.style.setProperty('--x', `${(Math.random() - 0.5) * (big ? 30 : 20)}px`);
+    fireball.style.setProperty('--y', `${(Math.random() - 0.6) * (big ? 34 : 24)}px`);
+    fireball.style.setProperty('--s', `${0.65 + Math.random() * 0.7}`);
+    fireball.style.animationDelay = `${i * 35}ms`;
+    batch.appendChild(fireball);
+  }
+  for (let i = 0; i < smokeClouds; i++) {
+    const smoke = document.createElement('span');
+    smoke.className = 'fx-smoke';
+    smoke.style.setProperty('--x', `${(Math.random() - 0.5) * (big ? 44 : 30)}px`);
+    smoke.style.setProperty('--y', `${-18 - Math.random() * (big ? 60 : 42)}px`);
+    smoke.style.setProperty('--s', `${0.7 + Math.random() * 0.8}`);
+    smoke.style.animationDelay = `${100 + i * 45}ms`;
+    batch.appendChild(smoke);
+  }
   for (let i = 0; i < shards; i++) {
     const shard = document.createElement('i');
+    shard.className = 'fx-spark';
     const angle = (i / shards) * 360 + Math.random() * 18;
     const distance = (big ? 46 : 30) + Math.random() * (big ? 40 : 24);
     shard.style.setProperty('--a', `${angle}deg`);

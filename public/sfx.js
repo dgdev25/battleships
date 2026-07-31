@@ -1,10 +1,13 @@
-// Synthesised battle audio — no sample files, everything is generated in the
-// browser. The context is created lazily on the first user gesture, because
-// browsers refuse to start audio before one.
+// Layered battle audio. A tiny public-domain field recording provides the real
+// detonation body; Web Audio adds the missile whistle, water, sub-bass, and a
+// procedural fallback. The context still starts only on a user gesture.
 
 let ctx = null;
 let master = null;
 let muted = localStorage.getItem('abyssal-muted') === '1';
+const sampleBuffers = new Map();
+const sampleLoads = new Map();
+const SAMPLE_URLS = { explosion: '/audio/explosion.ogg' };
 
 function ensure() {
   if (ctx) return ctx;
@@ -13,7 +16,16 @@ function ensure() {
   ctx = new AudioCtx();
   master = ctx.createGain();
   master.gain.value = muted ? 0 : 0.9;
-  master.connect(ctx.destination);
+  // A detonation stacks eight voices at once, which sums well past full scale.
+  // The limiter catches those peaks so the blast stays big instead of turning
+  // into digital clipping, and keeps the quiet sounds where they were.
+  const limiter = ctx.createDynamicsCompressor();
+  limiter.threshold.value = -8;
+  limiter.knee.value = 6;
+  limiter.ratio.value = 12;
+  limiter.attack.value = 0.003;
+  limiter.release.value = 0.25;
+  master.connect(limiter).connect(ctx.destination);
   return ctx;
 }
 
@@ -34,6 +46,7 @@ export function setMuted(next) {
 export function unlock() {
   const c = ensure();
   if (c && c.state === 'suspended' && !muted) c.resume();
+  if (c) preloadSamples(c);
 }
 
 // Called when the tab goes to the background: nothing is audible there anyway.
@@ -50,6 +63,44 @@ export function resume() {
 // buffers, synchronously on the main thread, every single time it happened.
 // The kit only uses a handful of distinct durations, so the cache stays tiny.
 const noiseBuffers = new Map();
+
+function disconnectOnEnd(source, ...nodes) {
+  source.addEventListener('ended', () => {
+    source.disconnect();
+    for (const node of nodes) node.disconnect();
+  }, { once: true });
+}
+
+function preloadSamples(c) {
+  for (const [name, url] of Object.entries(SAMPLE_URLS)) {
+    if (sampleBuffers.has(name) || sampleLoads.has(name)) continue;
+    const loading = fetch(url)
+      .then((response) => {
+        if (!response.ok) throw new Error(`sample ${response.status}`);
+        return response.arrayBuffer();
+      })
+      .then((bytes) => c.decodeAudioData(bytes))
+      .then((buffer) => sampleBuffers.set(name, buffer))
+      .catch(() => null)
+      .finally(() => sampleLoads.delete(name));
+    sampleLoads.set(name, loading);
+  }
+}
+
+function playSample(name, { gain = 1, rate = 1 } = {}) {
+  const c = ensure();
+  const buffer = sampleBuffers.get(name);
+  if (!c || muted || !buffer) return false;
+  const source = c.createBufferSource();
+  const level = c.createGain();
+  source.buffer = buffer;
+  source.playbackRate.value = rate;
+  level.gain.value = gain;
+  source.connect(level).connect(master);
+  disconnectOnEnd(source, level);
+  source.start();
+  return true;
+}
 
 function noiseBuffer(c, duration) {
   const cached = noiseBuffers.get(duration);
@@ -83,6 +134,7 @@ function noise(duration, { type = 'lowpass', freq = 900, q = 0.8, gain = 0.5, at
   env.gain.linearRampToValueAtTime(gain, t0 + attack);
   env.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
   src.connect(filter).connect(env).connect(master);
+  disconnectOnEnd(src, filter, env);
   src.start(t0);
   src.stop(t0 + duration + 0.05);
 }
@@ -100,30 +152,80 @@ function tone(from, to, duration, { type = 'sine', gain = 0.5, delay = 0 } = {})
   env.gain.linearRampToValueAtTime(gain, t0 + 0.01);
   env.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
   osc.connect(env).connect(master);
+  disconnectOnEnd(osc, env);
   osc.start(t0);
   osc.stop(t0 + duration + 0.05);
 }
 
+// A pitched voice that can bend anywhere, not just from A to B. Used for the
+// whistle, where the fall has to ease rather than run straight down.
+function glide(points, duration, { type = 'sine', gain = 0.4, delay = 0, detune = 0 } = {}) {
+  const c = ensure();
+  if (!c || muted) return null;
+  const t0 = c.currentTime + delay;
+  const osc = c.createOscillator();
+  osc.type = type;
+  osc.detune.value = detune;
+  osc.frequency.setValueAtTime(points[0][1], t0);
+  for (const [at, hz] of points.slice(1)) {
+    osc.frequency.exponentialRampToValueAtTime(Math.max(1, hz), t0 + at * duration);
+  }
+  const env = c.createGain();
+  env.gain.setValueAtTime(0, t0);
+  env.gain.linearRampToValueAtTime(gain, t0 + 0.03);
+  env.gain.setValueAtTime(gain, t0 + duration * 0.72);
+  env.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+  osc.connect(env).connect(master);
+  disconnectOnEnd(osc, env);
+  osc.start(t0);
+  osc.stop(t0 + duration + 0.05);
+  return osc;
+}
+
 // ---- the kit -------------------------------------------------------------
 
-// Shell leaving the tube: a short upward whoosh.
+export const FLIGHT_MS = 540; // how long a shell is in the air
+
+// The shell leaving the tube, then the long falling whistle as it arcs over.
+// Two slightly detuned voices beating against each other give it the wobble a
+// single clean oscillator never has.
 export function launch() {
-  noise(0.34, { type: 'bandpass', freq: 420, q: 1.2, gain: 0.22, sweepTo: 2600 });
-  tone(180, 700, 0.28, { type: 'triangle', gain: 0.06 });
+  // muzzle crack
+  noise(0.16, { type: 'highpass', freq: 1400, q: 0.7, gain: 0.32, sweepTo: 380 });
+  tone(140, 48, 0.24, { type: 'triangle', gain: 0.3 });
+  // the whistle: high, holds, then falls away as it comes down
+  const arc = [[0, 1750], [0.18, 2050], [0.55, 1150], [1, 330]];
+  glide(arc, 0.54, { type: 'sine', gain: 0.17, delay: 0.04 });
+  glide(arc, 0.54, { type: 'sine', gain: 0.11, delay: 0.04, detune: 22 });
+  glide(arc, 0.54, { type: 'triangle', gain: 0.05, delay: 0.04, detune: -14 });
+  // thin air rush under the tone
+  noise(0.52, { type: 'bandpass', freq: 2400, q: 2.4, gain: 0.05, sweepTo: 700, delay: 0.04 });
 }
 
-// Splash into open water — dull, wet, short.
+// Into open water: the surface breaking, then the column collapsing back.
 export function splash() {
-  noise(0.42, { type: 'lowpass', freq: 1100, q: 0.7, gain: 0.3, sweepTo: 220 });
-  tone(240, 90, 0.22, { type: 'sine', gain: 0.12 });
+  noise(0.1, { type: 'highpass', freq: 3200, q: 0.6, gain: 0.34 });                       // surface break
+  noise(0.5, { type: 'lowpass', freq: 1800, q: 0.8, gain: 0.42, sweepTo: 260 });          // the gulp
+  tone(300, 70, 0.3, { type: 'sine', gain: 0.22 });                                        // body of water
+  noise(0.85, { type: 'lowpass', freq: 700, q: 0.5, gain: 0.2, sweepTo: 150, delay: 0.1 }); // wash falling back
+  tone(150, 55, 0.5, { type: 'sine', gain: 0.1, delay: 0.12 });
 }
 
-// Direct hit: a crack, a body of noise, and a falling boom underneath.
+// Direct hit. Layered as a real detonation is: the crack that arrives first,
+// the body of the blast, a sub drop you feel more than hear, and debris.
+function proceduralExplosion(recorded = false) {
+  noise(0.07, { type: 'highpass', freq: 3600, gain: 0.75 });                                  // crack
+  noise(0.22, { type: 'bandpass', freq: 1500, q: 0.8, gain: recorded ? 0.25 : 0.7 });          // punch
+  noise(1.25, { type: 'lowpass', freq: 2600, gain: recorded ? 0.24 : 0.85, sweepTo: 90 });     // body/fallback
+  tone(190, 26, 1.1, { type: 'sine', gain: recorded ? 0.62 : 0.9 });                           // sub drop
+  tone(110, 21, 1.7, { type: 'triangle', gain: 0.4, delay: 0.02 });                           // rumble
+  tone(62, 19, 2.1, { type: 'sine', gain: 0.3, delay: 0.05 });                                // the floor
+  noise(0.9, { type: 'bandpass', freq: 900, q: 1.1, gain: 0.22, sweepTo: 240, delay: 0.14 }); // debris
+  noise(1.4, { type: 'lowpass', freq: 400, gain: 0.16, sweepTo: 70, delay: 0.3 });            // tail
+}
+
 export function explode() {
-  noise(0.09, { type: 'highpass', freq: 2400, gain: 0.55 });          // crack
-  noise(0.85, { type: 'lowpass', freq: 1800, gain: 0.65, sweepTo: 180 }); // body
-  tone(150, 34, 0.75, { type: 'sine', gain: 0.55 });                   // boom
-  tone(90, 28, 1.05, { type: 'triangle', gain: 0.22, delay: 0.03 });   // rumble
+  proceduralExplosion(playSample('explosion', { gain: 1.05, rate: 0.92 + Math.random() * 0.14 }));
 }
 
 // A hull going under: the hit, then a second detonation and a long groan.

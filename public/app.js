@@ -2,6 +2,7 @@
 import * as sfx from './sfx.js';
 import * as fx from './fx.js';
 import { buildScoreboard, setDisplay, flash } from './scoreboard.js';
+import { renderFleetPieces } from './ships.js';
 
 const SIZE = 10;
 const $ = (id) => document.getElementById(id);
@@ -25,7 +26,10 @@ const api = async (url, body) => {
   return data;
 };
 const label = (r, c) => `${String.fromCharCode(65 + r)}${c + 1}`;
+const wait = (ms) => new Promise((done) => setTimeout(done, ms));
 const pct = (x) => `${(x * 100).toFixed(0)}%`;
+const savedTempo = Number(localStorage.getItem('abyssal-tempo'));
+const initialTempo = Number.isFinite(savedTempo) && savedTempo >= 200 && savedTempo <= 2500 ? savedTempo : 700;
 
 const MODE_COPY = {
   dominate: 'Fires every read it gets. No handicap, no mercy.',
@@ -46,6 +50,7 @@ const state = {
   board: null,      // scoreboard displays
   startedAt: null,  // engagement clock
   clockTimer: null,
+  returnFireMs: initialTempo,
 };
 
 const enemyGrid = $('enemy-grid');
@@ -122,6 +127,7 @@ function renderOwnSetup(preview) {
   previewCells.length = 0;
   if (setupDirty) {
     paintSetupBase();
+    renderFleetPieces($('own-ships'), state.config.fleet, state.placement);
     setupDirty = false;
   }
   if (preview) {
@@ -192,17 +198,20 @@ function scatter() {
 }
 
 // ---------------- battle rendering ----------------
-function renderBoard(grid, view, { showShips, sealCell, predicted }) {
+// `hold` / `unsink` keep the incoming shell secret until it actually lands:
+// the struck cell renders as untouched, and a hull it just sank still reads as
+// merely hit, so the board never spoils the impact that is still in the air.
+function renderBoard(grid, view, { showShips, sealCell, predicted, hold, unsink }) {
   const sunkCells = new Set(view.sunkCells.flatMap((s) => s.cells));
   for (let i = 0; i < SIZE * SIZE; i++) {
     const cell = grid.children[i];
-    const shot = view.shots[i];
+    const shot = hold === i ? 0 : view.shots[i];
     const classes = ['cell'];
     if (showShips && view.occupied && view.occupied[i]) classes.push('ship');
     if (shot === 1) classes.push('miss', 'spent');
     // sunk hulls keep burning — the class survives re-renders because it is
     // derived here rather than left behind by the effect layer
-    if (shot === 2) classes.push(sunkCells.has(i) ? 'sunk burning' : 'hit', 'spent');
+    if (shot === 2) classes.push(sunkCells.has(i) && !unsink?.has(i) ? 'sunk burning' : 'hit', 'spent');
     if (sealCell === i) classes.push('sealed');
     if (predicted === i) classes.push('predicted');
     const next = classes.join(' ');
@@ -342,13 +351,19 @@ function log(text, kind = '') {
   while (el.children.length > LOG_LIMIT) el.lastElementChild.remove();
 }
 
-function renderGame(data, events) {
+function renderGame(data, events, { hold, unsink } = {}) {
   state.game = data;
   const predicted = state.foresight && data.forecast?.prediction
     ? data.forecast.prediction.r * SIZE + data.forecast.prediction.c
     : null;
   renderBoard(enemyGrid, data.aiBoard, { showShips: data.over, predicted });
-  renderBoard(ownGrid, data.playerBoard, { showShips: true });
+  renderBoard(ownGrid, data.playerBoard, { showShips: true, hold, unsink });
+  const withSunkState = (view) => (view.fleetShips ?? []).map((ship) => ({
+    ...ship,
+    sunk: view.fleet.find((item) => item.id === ship.id)?.sunk ?? false,
+  }));
+  renderFleetPieces($('own-ships'), state.config.fleet, withSunkState(data.playerBoard), { withheld: unsink });
+  renderFleetPieces($('enemy-ships'), state.config.fleet, withSunkState(data.aiBoard));
   renderFleet($('enemy-fleet'), data.aiBoard, false);
   renderFleet($('own-fleet'), data.playerBoard, true);
   renderTelemetry(data.telemetry);
@@ -367,7 +382,9 @@ function renderGame(data, events) {
   }
   $('seal-hash').textContent = data.seal ? `${data.seal.hash.slice(0, 24)}…` : (data.over ? 'stood down' : 'sealing…');
 
-  if (data.over) {
+  // While a shell is still in the air the game is not allowed to end: the
+  // defeat banner and the fanfare wait for the impact that caused them.
+  if (data.over && hold == null) {
     $('setup').style.display = '';
     const alreadyOver = state.phase === 'over';
     state.phase = 'over';
@@ -401,6 +418,7 @@ async function engage() {
     $('btn-engage').textContent = 'Engage';
     $('log').innerHTML = '<p>Awaiting deployment.</p>';
     enemyGrid.querySelectorAll('.cell').forEach((c) => { c.className = 'cell'; });
+    renderFleetPieces($('enemy-ships'), state.config.fleet, []);
     renderOwnSetup();
     $('phase').textContent = 'place your fleet';
     return;
@@ -435,9 +453,15 @@ async function shoot(r, c) {
   $('enemy-sweep').classList.add('on');
   sfx.unlock();
   sfx.launch();
+  const firedAt = performance.now();
   try {
     const data = await api('/api/fire', { gameId: state.game.gameId, r, c });
     const ev = data.events ?? {};
+    // The shell is in the air. Hold the impact until the whistle has landed,
+    // however long the server actually took to answer.
+    const flight = Math.max(0, sfx.FLIGHT_MS - (performance.now() - firedAt));
+    await wait(flight);
+
     if (ev.player) {
       log(`You → <b>${ev.player.label}</b> ${ev.player.hit ? 'HIT' : 'miss'}${ev.player.sunk ? ` · ${ev.player.sunk.name} sunk` : ''}`, ev.player.hit ? 'hit' : '');
       if (ev.player.hit) {
@@ -450,24 +474,35 @@ async function shoot(r, c) {
       }
     }
     if (ev.read?.exact) log('It called that shot exactly.', 'enemy');
+    // The AI's reply is already in this payload, so hold its cell back until
+    // its own shell lands rather than spoiling it a second early.
+    const pending = ev.ai?.ok
+      ? { hold: ev.ai.r * SIZE + ev.ai.c, unsink: new Set(ev.ai.sunk?.cells ?? []) }
+      : {};
+    renderGame(data, ev, pending);
+    if (ev.player?.hit) flash($('scoreboard'));
+
     if (ev.ai?.ok) {
       log(`AI → <b>${ev.ai.label}</b> ${ev.ai.hit ? 'HIT' : 'miss'}${ev.ai.sunk ? ` · your ${ev.ai.sunk.name} sunk` : ''}`, 'enemy');
       const own = cellAt(ownGrid, ev.ai.r, ev.ai.c);
-      own.classList.add('ping', 'fresh');
-      // stagger the return fire so the two impacts read as separate events
-      setTimeout(() => {
-        if (ev.ai.hit) {
-          ownGrid.classList.add('shake');
-          fx.explode(own, { big: Boolean(ev.ai.sunk) });
-          if (ev.ai.sunk) { sfx.sink(); fx.sink(ev.ai.sunk.cells, ownGrid); } else sfx.explode();
-        } else {
-          fx.splash(own);
-          sfx.splash();
-        }
-      }, 620);
+      // return fire: its own launch, its own flight, its own impact
+      $('phase').textContent = `return fire in ${(state.returnFireMs / 1000).toFixed(1)}s`;
+      await wait(state.returnFireMs);
+      $('phase').textContent = 'incoming missile';
+      sfx.launch();
+      await wait(sfx.FLIGHT_MS);
+      renderGame(data, ev); // the shell has landed — show it
+      own.classList.add('ping', 'fresh'); // after the render, which rewrites classes
+      if (ev.ai.hit) {
+        ownGrid.classList.add('shake');
+        fx.explode(own, { big: Boolean(ev.ai.sunk) });
+        if (ev.ai.sunk) { sfx.sink(); fx.sink(ev.ai.sunk.cells, ownGrid); } else sfx.explode();
+        flash($('scoreboard'));
+      } else {
+        fx.splash(own);
+        sfx.splash();
+      }
     }
-    renderGame(data, ev);
-    if (ev.player?.hit || ev.ai?.hit) flash($('scoreboard'));
   } catch (err) {
     log(`<b>${err.message}</b>`, 'enemy');
   } finally {
@@ -516,6 +551,16 @@ $('btn-clear').addEventListener('click', () => {
   fleetChanged();
   renderOwnSetup();
 });
+const tempoRange = $('tempo-range');
+const updateTempo = (value, persist = true) => {
+  const next = Math.min(2500, Math.max(200, Number(value) || 700));
+  state.returnFireMs = next;
+  tempoRange.value = String(next);
+  $('tempo-value').value = `${(next / 1000).toFixed(1)}s`;
+  if (persist) localStorage.setItem('abyssal-tempo', String(next));
+};
+tempoRange.addEventListener('input', (event) => updateTempo(event.currentTarget.value));
+updateTempo(state.returnFireMs, false);
 
 // A backgrounded tab should cost nothing: the looping radar arms and blinking
 // bulbs park, the audio thread suspends, and the clock stops ticking.

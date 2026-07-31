@@ -4,7 +4,8 @@
   "description": "Battleships against a ruvector vector-memory opponent",
   "main": "src/server.mjs",
   "scripts": {
-    "start": "node src/server.mjs"
+    "start": "node src/server.mjs",
+    "test": "node --test"
   },
   "keywords": [],
   "type": "module",

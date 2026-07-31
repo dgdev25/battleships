@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>ABYSSAL — vector-memory battleships</title>
 <meta name="description" content="Battleships against an opponent that stores every board as a ruvector memory and learns where you hide your fleet." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2305070c'/%3E%3Cpath d='M8 37h48L47 50H17zM20 29h26v8H20zM27 18h12v11H27z' fill='%232fe0cf'/%3E%3C/svg%3E" />
 <link rel="stylesheet" href="/styles.css" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -14,7 +15,7 @@
 <noscript><link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" /></noscript>
 </head>
 <body>
-<div class="shell">
+<main class="shell">
 
   <header class="top">
     <div>
@@ -44,6 +45,14 @@
           <summary>why the next shot is locked</summary>
           <p class="muted">Before you fire, the AI has already chosen its own target and shown you a fingerprint of it. After the round this page reopens the move, rebuilds the fingerprint and checks the two match — a single changed letter would scramble it. That proves the target did not change after you fired. It does not prove the target was chosen fairly: the opponent and the checker both run in this one process, so treat it as a working commit-and-reveal demonstration, not a referee.</p>
         </details>
+        <div class="tempo-control">
+          <div class="tempo-copy">
+            <label class="eyebrow" for="tempo-range">Return-fire tempo</label>
+            <output class="readout" id="tempo-value" for="tempo-range">0.7s</output>
+          </div>
+          <input id="tempo-range" type="range" min="200" max="2500" step="100" value="700" aria-label="Delay before enemy return fire" />
+          <p class="tiny">Short is arcade-fast; long gives each impact room to breathe.</p>
+        </div>
       </section>
 
       <div class="boards">
@@ -53,7 +62,8 @@
             <span class="readout tiny" id="enemy-progress">0 / 17</span>
           </div>
           <div class="grid-wrap">
-            <div class="grid live" id="enemy-grid" role="grid" aria-label="enemy waters"></div>
+            <div class="grid live" id="enemy-grid" aria-label="enemy waters"></div>
+            <div class="ship-layer enemy" id="enemy-ships" aria-hidden="true"></div>
             <div class="sweep" id="enemy-sweep"></div>
           </div>
           <div class="fleet" id="enemy-fleet"></div>
@@ -65,7 +75,8 @@
             <span class="readout tiny" id="own-progress">0 / 17</span>
           </div>
           <div class="grid-wrap">
-            <div class="grid" id="own-grid" role="grid" aria-label="your fleet"></div>
+            <div class="grid" id="own-grid" aria-label="your fleet"></div>
+            <div class="ship-layer" id="own-ships" aria-hidden="true"></div>
           </div>
           <div class="fleet" id="own-fleet"></div>
         </section>
@@ -155,7 +166,7 @@
 
     </aside>
   </div>
-</div>
+</main>
 <script type="module" src="/app.js"></script>
 </body>
 </html>

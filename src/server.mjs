@@ -38,7 +38,7 @@ function sweepGames() {
 }
 setInterval(sweepGames, 30 * 60 * 1000).unref();
 
-const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.json': 'application/json' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.ogg': 'audio/ogg', '.ico': 'image/x-icon', '.json': 'application/json' };
 
 const json = (res, code, body) => {
   const payload = JSON.stringify(body);
@@ -50,6 +50,17 @@ function viewOf(board) {
   const view = publicView(board);
   view.sunkCellSet = new Set(view.sunkCells.flatMap((s) => s.cells));
   return view;
+}
+
+function boardSnapshot(board, revealAll) {
+  return {
+    ...publicView(board, revealAll),
+    // Undefined fields disappear from JSON. Enemy geometry therefore does not
+    // cross the wire until game-over, while the player's own hulls always do.
+    fleetShips: revealAll
+      ? board.ships.map((ship) => ({ id: ship.id, cells: ship.cells, sunk: board.sunk.has(ship.id) }))
+      : undefined,
+  };
 }
 
 function stateForNote(game) {
@@ -108,8 +119,8 @@ function snapshot(game, extra = {}) {
     gameId: game.id,
     over: game.over,
     winner: game.winner,
-    playerBoard: { ...publicView(game.playerBoard, true), fleetShips: game.playerBoard.ships.map((s) => ({ id: s.id, cells: s.cells })) },
-    aiBoard: publicView(game.aiBoard, game.over),
+    playerBoard: boardSnapshot(game.playerBoard, true),
+    aiBoard: boardSnapshot(game.aiBoard, game.over),
     telemetry: telemetry(game),
     scope: game.ai.lastScope,
     forecast: game.forecast,

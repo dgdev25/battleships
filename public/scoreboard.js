@@ -34,9 +34,15 @@ export function makeDisplay(digits, tone, colonAfter = null) {
 }
 
 export function setDisplay(wrap, value) {
-  const cells = [...wrap.children].filter((el) => el.classList.contains('seg-digit'));
+  const cells = wrap._digits ?? (wrap._digits = [...wrap.children].filter((el) => el.classList.contains('seg-digit')));
   const text = String(value).padStart(cells.length, '0').slice(-cells.length);
+  // Most turns change one digit of one display. Bailing on an unchanged value
+  // keeps the other ~120 segments out of style recalculation entirely.
+  if (wrap._shown === text) return;
+  wrap._shown = text;
   cells.forEach((el, i) => {
+    if (el._char === text[i]) return;
+    el._char = text[i];
     const lit = SEGMENTS[text[i]] ?? '';
     for (const seg of el.children) seg.classList.toggle('on', lit.includes(seg.dataset.seg));
   });
