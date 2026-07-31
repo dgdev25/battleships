@@ -19,12 +19,33 @@ test('repeat-play render and audio work remains bounded', async () => {
   assert.match(sfx, /addEventListener\('ended'/);
   assert.match(server, /games\.delete\(game\.id\)/);
   assert.match(server, /'\.ogg': 'audio\/ogg'/);
+  assert.match(server, /'\.mp3': 'audio\/mpeg'/);
 });
 
-test('explosions use a bundled field recording with a procedural fallback', async () => {
+test('combat uses the supplied launch, whistle, and explosion recordings with fallbacks', async () => {
   const sfx = await read('../public/sfx.js');
-  assert.match(sfx, /\/audio\/explosion\.ogg/);
+  for (const sample of ['ship-fire-rocket.mp3', 'falling-bomb-whistle.mp3', 'bomb-explosion.mp3']) {
+    assert.ok(sfx.includes(`/audio/${sample}`));
+  }
+  assert.match(sfx, /FLIGHT_MS = 3400/);
   assert.match(sfx, /function proceduralExplosion/);
+});
+
+test('misses use a bundled water recording rather than a synthesized crack', async () => {
+  const sfx = await read('../public/sfx.js');
+  assert.match(sfx, /\/audio\/water-splashes\.ogg/);
+  assert.match(sfx, /WATER_IMPACTS/);
+  const splashBody = sfx.match(/export function splash\(\) \{([\s\S]*?)\n\}/)?.[1] ?? '';
+  assert.doesNotMatch(splashBody, /highpass/);
+});
+
+test('the supplied sea ambience loops and obeys the global sound toggle', async () => {
+  const [app, sfx] = await Promise.all([read('../public/app.js'), read('../public/sfx.js')]);
+  assert.match(sfx, /\/audio\/ww2-sea-background\.mp3/);
+  assert.match(sfx, /source\.loop = true/);
+  assert.match(sfx, /seaAmbience: 0\.07/);
+  assert.match(sfx, /if \(muted\) \{\s*stopAmbience\(\)/s);
+  assert.doesNotMatch(app, /if \(!next\) sfx\.launch\(\)/);
 });
 
 test('impact visuals contain a fireball, smoke, sparks, and water droplets', async () => {
@@ -53,6 +74,8 @@ test('return-fire tempo is user adjustable, displayed, and persisted', async () 
   assert.match(app, /returnFireMs/);
   assert.match(app, /await wait\(state\.returnFireMs\)/);
   assert.match(app, /abyssal-tempo/);
+  assert.match(html, /id="tempo-range"[^>]+max="5000"[^>]+value="1800"/);
+  assert.ok(app.indexOf('await wait(state.returnFireMs)') < app.indexOf('log(`AI →'));
 });
 
 test('the game has a main landmark without an invalid ARIA grid tree', async () => {

@@ -38,7 +38,7 @@ function sweepGames() {
 }
 setInterval(sweepGames, 30 * 60 * 1000).unref();
 
-const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.ogg': 'audio/ogg', '.ico': 'image/x-icon', '.json': 'application/json' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.ogg': 'audio/ogg', '.mp3': 'audio/mpeg', '.ico': 'image/x-icon', '.json': 'application/json' };
 
 const json = (res, code, body) => {
   const payload = JSON.stringify(body);

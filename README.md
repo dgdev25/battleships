@@ -13,6 +13,10 @@
 
 Battleships against an opponent that **remembers where you hide your fleet**.
 
+<p align="center">
+  <img src="assets/battleships.png" alt="Abyssal Battleships in play, showing the illuminated scoreboard, ship-shaped fleet pieces, return-fire tempo control, telemetry and vector-memory radar" width="100%">
+</p>
+
 Most computer Battleships opponents guess. They fire at random until something
 connects, then work outward from the hit. This one does that too — but only on
 its first game. After every finished game it writes down where your ships

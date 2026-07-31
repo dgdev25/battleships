@@ -29,7 +29,7 @@ const label = (r, c) => `${String.fromCharCode(65 + r)}${c + 1}`;
 const wait = (ms) => new Promise((done) => setTimeout(done, ms));
 const pct = (x) => `${(x * 100).toFixed(0)}%`;
 const savedTempo = Number(localStorage.getItem('abyssal-tempo'));
-const initialTempo = Number.isFinite(savedTempo) && savedTempo >= 200 && savedTempo <= 2500 ? savedTempo : 700;
+const initialTempo = Number.isFinite(savedTempo) && savedTempo >= 500 && savedTempo <= 5000 ? savedTempo : 1800;
 
 const MODE_COPY = {
   dominate: 'Fires every read it gets. No handicap, no mercy.',
@@ -483,7 +483,6 @@ async function shoot(r, c) {
     if (ev.player?.hit) flash($('scoreboard'));
 
     if (ev.ai?.ok) {
-      log(`AI → <b>${ev.ai.label}</b> ${ev.ai.hit ? 'HIT' : 'miss'}${ev.ai.sunk ? ` · your ${ev.ai.sunk.name} sunk` : ''}`, 'enemy');
       const own = cellAt(ownGrid, ev.ai.r, ev.ai.c);
       // return fire: its own launch, its own flight, its own impact
       $('phase').textContent = `return fire in ${(state.returnFireMs / 1000).toFixed(1)}s`;
@@ -492,6 +491,7 @@ async function shoot(r, c) {
       sfx.launch();
       await wait(sfx.FLIGHT_MS);
       renderGame(data, ev); // the shell has landed — show it
+      log(`AI → <b>${ev.ai.label}</b> ${ev.ai.hit ? 'HIT' : 'miss'}${ev.ai.sunk ? ` · your ${ev.ai.sunk.name} sunk` : ''}`, 'enemy');
       own.classList.add('ping', 'fresh'); // after the render, which rewrites classes
       if (ev.ai.hit) {
         ownGrid.classList.add('shake');
@@ -542,7 +542,6 @@ $('btn-sound').addEventListener('click', (e) => {
   sfx.setMuted(next);
   e.currentTarget.textContent = next ? 'Sound off' : 'Sound on';
   e.currentTarget.setAttribute('aria-pressed', String(!next));
-  if (!next) sfx.launch();
 });
 $('btn-random').addEventListener('click', scatter);
 $('btn-clear').addEventListener('click', () => {
@@ -553,7 +552,7 @@ $('btn-clear').addEventListener('click', () => {
 });
 const tempoRange = $('tempo-range');
 const updateTempo = (value, persist = true) => {
-  const next = Math.min(2500, Math.max(200, Number(value) || 700));
+  const next = Math.min(5000, Math.max(500, Number(value) || 1800));
   state.returnFireMs = next;
   tempoRange.value = String(next);
   $('tempo-value').value = `${(next / 1000).toFixed(1)}s`;

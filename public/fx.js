@@ -56,19 +56,20 @@ function spawn(cell, className, life) {
   return node;
 }
 
-// Water hit: a pressure ring, a bright central plume, and ballistic droplets.
+// Water hit: pressure rings, a bright central plume, and ballistic droplets.
 export function splash(cell) {
   if (idle()) return;
-  const node = spawn(cell, 'fx fx-splash', 1050);
+  const node = spawn(cell, 'fx fx-splash', 1350);
   if (!node) return;
   const batch = document.createDocumentFragment();
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 18; i++) {
     const drop = document.createElement('i');
     drop.className = 'fx-droplet';
-    const angle = (Math.PI * 2 * i) / 10 + Math.random() * 0.25;
-    const distance = 18 + Math.random() * 28;
+    const angle = (Math.PI * 2 * i) / 18 + Math.random() * 0.2;
+    const distance = 24 + Math.random() * 42;
     drop.style.setProperty('--x', `${Math.cos(angle) * distance}px`);
-    drop.style.setProperty('--y', `${Math.sin(angle) * distance - 14 - Math.random() * 18}px`);
+    drop.style.setProperty('--lift', `${-30 - Math.random() * 42}px`);
+    drop.style.setProperty('--fall', `${14 + Math.random() * 28}px`);
     drop.style.animationDelay = `${Math.random() * 70}ms`;
     batch.appendChild(drop);
   }
