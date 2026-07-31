@@ -48,6 +48,15 @@ test('the supplied sea ambience loops and obeys the global sound toggle', async 
   assert.doesNotMatch(app, /if \(!next\) sfx\.launch\(\)/);
 });
 
+test('game over selects the supplied victory or defeat recording', async () => {
+  const [app, sfx] = await Promise.all([read('../public/app.js'), read('../public/sfx.js')]);
+  assert.match(sfx, /victory: '\/audio\/victory\.mp3'/);
+  assert.match(sfx, /defeat: '\/audio\/defeat\.mp3'/);
+  assert.match(sfx, /playSample\(win \? 'victory' : 'defeat'/);
+  assert.match(sfx, /if \(recorded\) return/);
+  assert.match(app, /sfx\.fanfare\(data\.winner === 'player'\)/);
+});
+
 test('impact visuals contain a fireball, smoke, sparks, and water droplets', async () => {
   const [fx, css] = await Promise.all([read('../public/fx.js'), read('../public/styles.css')]);
   for (const token of ['fx-fireball', 'fx-smoke', 'fx-spark', 'fx-droplet']) {
@@ -82,4 +91,17 @@ test('the game has a main landmark without an invalid ARIA grid tree', async () 
   const html = await read('../public/index.html');
   assert.match(html, /<main class="shell">/);
   assert.doesNotMatch(html, /role="grid"/);
+});
+
+test('both boards expose visible A-J and 1-10 coordinate axes', async () => {
+  const [app, html, css] = await Promise.all([
+    read('../public/app.js'), read('../public/index.html'), read('../public/styles.css'),
+  ]);
+  assert.equal((html.match(/class="coordinate-board"/g) ?? []).length, 2);
+  assert.equal((html.match(/class="axis-row"/g) ?? []).length, 2);
+  assert.equal((html.match(/class="axis-col"/g) ?? []).length, 2);
+  assert.match(html, /<span>A<\/span>.*<span>J<\/span>/s);
+  assert.match(html, /<span>1<\/span>.*<span>10<\/span>/s);
+  assert.match(app, /columnLabels\[Number\(cell\.dataset\.c\)\]/);
+  assert.match(css, /\.axis-row span\.active, \.axis-col span\.active/);
 });

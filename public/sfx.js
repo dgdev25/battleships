@@ -13,6 +13,8 @@ const MIX = Object.freeze({
   bombWhistle: 0.5,
   waterSplash: 0.66,
   bombExplosion: 0.52,
+  victory: 0.5,
+  defeat: 0.42,
 });
 const sampleBuffers = new Map();
 const sampleLoads = new Map();
@@ -20,8 +22,10 @@ let ambienceSource = null;
 const SAMPLE_URLS = {
   bombExplosion: '/audio/bomb-explosion.mp3',
   bombWhistle: '/audio/falling-bomb-whistle.mp3',
+  defeat: '/audio/defeat.mp3',
   seaAmbience: '/audio/ww2-sea-background.mp3',
   shipFire: '/audio/ship-fire-rocket.mp3',
+  victory: '/audio/victory.mp3',
   waterSplash: '/audio/water-splashes.ogg',
 };
 
@@ -308,6 +312,10 @@ export function sink() {
 
 // Fleet destroyed — ours or theirs.
 export function fanfare(win) {
+  const recorded = playSample(win ? 'victory' : 'defeat', {
+    gain: win ? MIX.victory : MIX.defeat,
+  });
+  if (recorded) return;
   if (win) {
     [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, f, 0.5, { type: 'triangle', gain: 0.22, delay: i * 0.12 }));
   } else {

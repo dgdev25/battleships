@@ -61,10 +61,18 @@
             <h2>Enemy waters</h2>
             <span class="readout tiny" id="enemy-progress">0 / 17</span>
           </div>
-          <div class="grid-wrap">
-            <div class="grid live" id="enemy-grid" aria-label="enemy waters"></div>
-            <div class="ship-layer enemy" id="enemy-ships" aria-hidden="true"></div>
-            <div class="sweep" id="enemy-sweep"></div>
+          <div class="coordinate-board">
+            <div class="axis-row" aria-hidden="true">
+              <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+            </div>
+            <div class="axis-col" aria-hidden="true">
+              <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span><span>J</span>
+            </div>
+            <div class="grid-wrap">
+              <div class="grid live" id="enemy-grid" aria-label="enemy waters, rows A to J and columns 1 to 10"></div>
+              <div class="ship-layer enemy" id="enemy-ships" aria-hidden="true"></div>
+              <div class="sweep" id="enemy-sweep"></div>
+            </div>
           </div>
           <div class="fleet" id="enemy-fleet"></div>
         </section>
@@ -74,9 +82,17 @@
             <h2>Your fleet</h2>
             <span class="readout tiny" id="own-progress">0 / 17</span>
           </div>
-          <div class="grid-wrap">
-            <div class="grid" id="own-grid" aria-label="your fleet"></div>
-            <div class="ship-layer" id="own-ships" aria-hidden="true"></div>
+          <div class="coordinate-board">
+            <div class="axis-row" aria-hidden="true">
+              <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+            </div>
+            <div class="axis-col" aria-hidden="true">
+              <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span><span>J</span>
+            </div>
+            <div class="grid-wrap">
+              <div class="grid" id="own-grid" aria-label="your fleet, rows A to J and columns 1 to 10"></div>
+              <div class="ship-layer" id="own-ships" aria-hidden="true"></div>
+            </div>
           </div>
           <div class="fleet" id="own-fleet"></div>
         </section>

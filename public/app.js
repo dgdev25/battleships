@@ -73,6 +73,29 @@ function buildGrid(el, onClick, onHover) {
       el.appendChild(cell);
     }
   }
+
+  const board = el.closest('.coordinate-board');
+  const rowLabels = board?.querySelectorAll('.axis-col span') ?? [];
+  const columnLabels = board?.querySelectorAll('.axis-row span') ?? [];
+  const clearAxis = () => {
+    rowLabels.forEach((item) => item.classList.remove('active'));
+    columnLabels.forEach((item) => item.classList.remove('active'));
+  };
+  const showAxis = (event) => {
+    const cell = event.target.closest('.cell');
+    if (!cell || !el.contains(cell)) return;
+    clearAxis();
+    rowLabels[Number(cell.dataset.r)]?.classList.add('active');
+    columnLabels[Number(cell.dataset.c)]?.classList.add('active');
+  };
+  // One delegated listener per interaction keeps coordinate highlighting
+  // constant-size instead of adding four more handlers to every grid cell.
+  el.addEventListener('pointerover', showAxis);
+  el.addEventListener('focusin', showAxis);
+  el.addEventListener('pointerleave', clearAxis);
+  el.addEventListener('focusout', (event) => {
+    if (!el.contains(event.relatedTarget)) clearAxis();
+  });
 }
 
 const cellAt = (grid, r, c) => grid.children[r * SIZE + c];
