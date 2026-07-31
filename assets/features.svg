@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 430" width="1200" height="430" role="img" aria-labelledby="t">
+  <title id="t">Feature grid: learning opponent, sealed shots, telemetry, vector scope, three doctrines, and portable memory</title>
+  <defs>
+    <style>
+      :root{ --bg:#ffffff;--surface:#f6f8fa;--border:#d0d7de;--ink:#1f2328;--muted:#656d76;--accent:#0d9488;--accent2:#5b4bd6; }
+      @media (prefers-color-scheme: dark){ :root{ --bg:#0d1117;--surface:#161b22;--border:#30363d;--ink:#e6edf3;--muted:#8b949e;--accent:#2fe0cf;--accent2:#9d8cff; }}
+      text{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+      .card{ fill:var(--surface); stroke:var(--border); stroke-width:1.5; }
+      .t{ fill:var(--ink); font-weight:600; }
+      .d{ fill:var(--muted); }
+    </style>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--accent)"/><stop offset="1" stop-color="var(--accent2)"/></linearGradient>
+  </defs>
+
+  <rect width="1200" height="430" fill="var(--bg)"/>
+  <text x="40" y="46" font-size="27" class="t">What you get</text>
+
+  <!-- row 1 -->
+  <g>
+    <rect class="card" x="40"  y="70" width="360" height="152" rx="14"/>
+    <rect x="70" y="98" width="46" height="46" rx="12" fill="url(#g)"/><text x="93" y="129" font-size="22" text-anchor="middle">🧠</text>
+    <text class="t" x="132" y="118" font-size="18">It remembers you</text>
+    <text class="d" x="132" y="140" font-size="13">Every finished board is stored.</text>
+    <text class="d" x="70"  y="178" font-size="13">Repeat a habit — hugging edges, always</text>
+    <text class="d" x="70"  y="198" font-size="13">going horizontal — and it starts there.</text>
+  </g>
+  <g>
+    <rect class="card" x="420" y="70" width="360" height="152" rx="14"/>
+    <rect x="450" y="98" width="46" height="46" rx="12" fill="url(#g)"/><text x="473" y="129" font-size="22" text-anchor="middle">🔒</text>
+    <text class="t" x="512" y="118" font-size="18">Sealed shots</text>
+    <text class="d" x="512" y="140" font-size="13">It commits before you fire.</text>
+    <text class="d" x="450" y="178" font-size="13">You see a SHA-256 fingerprint first, then</text>
+    <text class="d" x="450" y="198" font-size="13">the page reopens it and checks the match.</text>
+  </g>
+  <g>
+    <rect class="card" x="800" y="70" width="360" height="152" rx="14"/>
+    <rect x="830" y="98" width="46" height="46" rx="12" fill="url(#g)"/><text x="853" y="129" font-size="22" text-anchor="middle">📡</text>
+    <text class="t" x="892" y="118" font-size="18">Honest telemetry</text>
+    <text class="d" x="892" y="140" font-size="13">Read rate against a real baseline.</text>
+    <text class="d" x="830" y="178" font-size="13">Exact-cell guessing is 1% blind, not 50% —</text>
+    <text class="d" x="830" y="198" font-size="13">the panel says so and shows both numbers.</text>
+  </g>
+
+  <!-- row 2 -->
+  <g>
+    <rect class="card" x="40"  y="242" width="360" height="152" rx="14"/>
+    <rect x="70" y="270" width="46" height="46" rx="12" fill="url(#g)"/><text x="93" y="301" font-size="22" text-anchor="middle">🎯</text>
+    <text class="t" x="132" y="290" font-size="18">Vector scope</text>
+    <text class="d" x="132" y="312" font-size="13">The recall behind each shot, drawn.</text>
+    <text class="d" x="70"  y="350" font-size="13">Each dot is one memory: nearer the middle</text>
+    <text class="d" x="70"  y="370" font-size="13">is more similar, red means it held a hull.</text>
+  </g>
+  <g>
+    <rect class="card" x="420" y="242" width="360" height="152" rx="14"/>
+    <rect x="450" y="270" width="46" height="46" rx="12" fill="url(#g)"/><text x="473" y="301" font-size="22" text-anchor="middle">⚔️</text>
+    <text class="t" x="512" y="290" font-size="18">Three doctrines</text>
+    <text class="d" x="512" y="312" font-size="13">Dominate, Level, Yield.</text>
+    <text class="d" x="450" y="350" font-size="13">They change what it does with a read —</text>
+    <text class="d" x="450" y="370" font-size="13">never how hard it reads you.</text>
+  </g>
+  <g>
+    <rect class="card" x="800" y="242" width="360" height="152" rx="14"/>
+    <rect x="830" y="270" width="46" height="46" rx="12" fill="url(#g)"/><text x="853" y="301" font-size="22" text-anchor="middle">💾</text>
+    <text class="t" x="892" y="290" font-size="18">Your memory, on disk</text>
+    <text class="d" x="892" y="312" font-size="13">Export it. Wipe it. No cloud.</text>
+    <text class="d" x="830" y="350" font-size="13">Episodes live in data/ as plain JSONL plus</text>
+    <text class="d" x="830" y="370" font-size="13">a ruvector index, rebuilt on every boot.</text>
+  </g>
+</svg>

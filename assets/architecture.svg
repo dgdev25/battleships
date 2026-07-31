@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 580" width="1000" height="580" role="img" aria-labelledby="t">
+  <title id="t">Architecture: browser front-end, Node HTTP server, game and opponent modules, and the ruvector store on disk</title>
+  <defs>
+    <style>
+      :root{ --bg:#ffffff;--surface:#f6f8fa;--border:#d0d7de;--ink:#1f2328;--muted:#656d76;--accent:#0d9488;--accent2:#5b4bd6;--band:#0d948814; }
+      @media (prefers-color-scheme: dark){ :root{ --bg:#0d1117;--surface:#161b22;--border:#30363d;--ink:#e6edf3;--muted:#8b949e;--accent:#2fe0cf;--accent2:#9d8cff;--band:#2fe0cf1a; }}
+      text{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+      .band{ fill:var(--band); }
+      .node{ fill:var(--surface); stroke:var(--border); stroke-width:1.5; }
+      .ink{ fill:var(--ink); font-weight:600; }
+      .sub{ fill:var(--muted); }
+      .lbl{ fill:var(--accent); font-weight:700; letter-spacing:1.2px; }
+      .edge{ stroke:var(--accent); stroke-width:2; fill:none; }
+    </style>
+    <marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker>
+  </defs>
+
+  <rect width="1000" height="580" fill="var(--bg)"/>
+
+  <!-- browser -->
+  <text class="lbl" x="60" y="46" font-size="13">BROWSER</text>
+  <rect class="band" x="40" y="58" width="920" height="118" rx="16"/>
+  <rect class="node" x="70"  y="86" width="255" height="62" rx="12"/>
+  <text class="ink" x="197" y="112" font-size="15" text-anchor="middle">Sonar HUD</text>
+  <text class="sub" x="197" y="133" font-size="12" text-anchor="middle">index.html · styles.css</text>
+  <rect class="node" x="372" y="86" width="255" height="62" rx="12"/>
+  <text class="ink" x="500" y="112" font-size="15" text-anchor="middle">Game client</text>
+  <text class="sub" x="500" y="133" font-size="12" text-anchor="middle">app.js — grids, scope, log</text>
+  <rect class="node" x="674" y="86" width="255" height="62" rx="12"/>
+  <text class="ink" x="801" y="112" font-size="15" text-anchor="middle">Instrument panels</text>
+  <text class="sub" x="801" y="133" font-size="12" text-anchor="middle">telemetry · seal · foresight</text>
+
+  <path class="edge" d="M500,150 L500,206" marker-end="url(#a)"/>
+  <text class="sub" x="516" y="184" font-size="12">fetch /api/game · /api/fire</text>
+
+  <!-- server -->
+  <text class="lbl" x="60" y="222" font-size="13">NODE SERVER</text>
+  <rect class="band" x="40" y="234" width="920" height="96" rx="16"/>
+  <rect class="node" x="300" y="258" width="400" height="50" rx="12"/>
+  <text class="ink" x="500" y="280" font-size="15" text-anchor="middle">server.mjs</text>
+  <text class="sub" x="500" y="298" font-size="12" text-anchor="middle">static files · JSON API · session state · commit-and-reveal</text>
+
+  <path class="edge" d="M420,312 L300,364" marker-end="url(#a)"/>
+  <path class="edge" d="M580,312 L700,364" marker-end="url(#a)"/>
+
+  <!-- core -->
+  <text class="lbl" x="60" y="378" font-size="13">CORE</text>
+  <rect class="band" x="40" y="390" width="920" height="96" rx="16"/>
+  <rect class="node" x="110" y="414" width="330" height="50" rx="12"/>
+  <text class="ink" x="275" y="436" font-size="15" text-anchor="middle">game.mjs</text>
+  <text class="sub" x="275" y="454" font-size="12" text-anchor="middle">board, fleet, shots, placement validation</text>
+  <rect class="node" x="560" y="414" width="330" height="50" rx="12"/>
+  <text class="ink" x="725" y="436" font-size="15" text-anchor="middle">ai.mjs</text>
+  <text class="sub" x="725" y="454" font-size="12" text-anchor="middle">notes, recall vote, hunt/target, doctrines</text>
+
+  <path class="edge" d="M725,468 L640,516" marker-end="url(#a)"/>
+
+  <!-- memory -->
+  <text class="lbl" x="60" y="512" font-size="13">MEMORY</text>
+  <rect class="band" x="40" y="500" width="920" height="62" rx="16"/>
+  <rect class="node" x="330" y="512" width="470" height="42" rx="12"/>
+  <text class="ink" x="565" y="530" font-size="15" text-anchor="middle">memory.mjs → ruvector</text>
+  <text class="sub" x="565" y="547" font-size="12" text-anchor="middle">64-dim n-gram vectors · cosine HNSW · RVF store + JSONL journal in data/</text>
+</svg>

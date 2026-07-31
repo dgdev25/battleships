@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>README SVG preview</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+  body.light { background:#ffffff; color:#1f2328; }
+  body.dark  { background:#0d1117; color:#e6edf3; }
+  header { position:sticky; top:0; display:flex; gap:16px; align-items:center;
+            padding:14px 24px; border-bottom:1px solid #8884; backdrop-filter:blur(6px);
+            background:inherit; z-index:10; }
+  h1 { font-size:16px; margin:0; font-weight:700; }
+  .spacer { flex:1; }
+  button { font:inherit; cursor:pointer; border:1px solid #8886; border-radius:8px;
+            padding:7px 14px; background:transparent; color:inherit; }
+  button:hover { border-color:#888; }
+  main { padding:24px; display:flex; flex-direction:column; gap:28px; max-width:1280px; margin:0 auto; }
+  figure { margin:0; border:1px solid #8883; border-radius:14px; overflow:hidden; }
+  figcaption { padding:10px 16px; font-size:13px; font-weight:600; border-bottom:1px solid #8883;
+                opacity:.85; display:flex; justify-content:space-between; }
+  figcaption .dim { font-weight:400; opacity:.6; }
+  .frame { padding:20px; display:flex; justify-content:center; }
+  .frame svg { max-width:100%; height:auto; }
+  .empty { opacity:.6; padding:40px; text-align:center; }
+</style>
+</head>
+<body class="light">
+<header>
+  <h1>README SVG preview</h1>
+  <span class="dim" style="opacity:.6;font-size:13px">4 image(s)</span>
+  <span class="spacer"></span>
+  <button id="toggle">Switch to dark</button>
+</header>
+<main>
+<figure>
+  <figcaption><span>architecture.svg</span><span class="dim">1000×580</span></figcaption>
+  <div class="frame"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 580" width="1000" height="580" role="img" aria-labelledby="t">
+  <title id="t">Architecture: browser front-end, Node HTTP server, game and opponent modules, and the ruvector store on disk</title>
+  <defs>
+    <style>
+      :root{ --bg:#ffffff;--surface:#f6f8fa;--border:#d0d7de;--ink:#1f2328;--muted:#656d76;--accent:#0d9488;--accent2:#5b4bd6;--band:#0d948814; }
+      @media (prefers-color-scheme: dark){ :root{ --bg:#0d1117;--surface:#161b22;--border:#30363d;--ink:#e6edf3;--muted:#8b949e;--accent:#2fe0cf;--accent2:#9d8cff;--band:#2fe0cf1a; }}
+      text{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+      .band{ fill:var(--band); }
+      .node{ fill:var(--surface); stroke:var(--border); stroke-width:1.5; }
+      .ink{ fill:var(--ink); font-weight:600; }
+      .sub{ fill:var(--muted); }
+      .lbl{ fill:var(--accent); font-weight:700; letter-spacing:1.2px; }
+      .edge{ stroke:var(--accent); stroke-width:2; fill:none; }
+    </style>
+    <marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker>
+  </defs>
+
+  <rect width="1000" height="580" fill="var(--bg)"/>
+
+  <!-- browser -->
+  <text class="lbl" x="60" y="46" font-size="13">BROWSER</text>
+  <rect class="band" x="40" y="58" width="920" height="118" rx="16"/>
+  <rect class="node" x="70"  y="86" width="255" height="62" rx="12"/>
+  <text class="ink" x="197" y="112" font-size="15" text-anchor="middle">Sonar HUD</text>
+  <text class="sub" x="197" y="133" font-size="12" text-anchor="middle">index.html · styles.css</text>
+  <rect class="node" x="372" y="86" width="255" height="62" rx="12"/>
+  <text class="ink" x="500" y="112" font-size="15" text-anchor="middle">Game client</text>
+  <text class="sub" x="500" y="133" font-size="12" text-anchor="middle">app.js — grids, scope, log</text>
+  <rect class="node" x="674" y="86" width="255" height="62" rx="12"/>
+  <text class="ink" x="801" y="112" font-size="15" text-anchor="middle">Instrument panels</text>
+  <text class="sub" x="801" y="133" font-size="12" text-anchor="middle">telemetry · seal · foresight</text>
+
+  <path class="edge" d="M500,150 L500,206" marker-end="url(#a)"/>
+  <text class="sub" x="516" y="184" font-size="12">fetch /api/game · /api/fire</text>
+
+  <!-- server -->
+  <text class="lbl" x="60" y="222" font-size="13">NODE SERVER</text>
+  <rect class="band" x="40" y="234" width="920" height="96" rx="16"/>
+  <rect class="node" x="300" y="258" width="400" height="50" rx="12"/>
+  <text class="ink" x="500" y="280" font-size="15" text-anchor="middle">server.mjs</text>
+  <text class="sub" x="500" y="298" font-size="12" text-anchor="middle">static files · JSON API · session state · commit-and-reveal</text>
+
+  <path class="edge" d="M420,312 L300,364" marker-end="url(#a)"/>
+  <path class="edge" d="M580,312 L700,364" marker-end="url(#a)"/>
+
+  <!-- core -->
+  <text class="lbl" x="60" y="378" font-size="13">CORE</text>
+  <rect class="band" x="40" y="390" width="920" height="96" rx="16"/>
+  <rect class="node" x="110" y="414" width="330" height="50" rx="12"/>
+  <text class="ink" x="275" y="436" font-size="15" text-anchor="middle">game.mjs</text>
+  <text class="sub" x="275" y="454" font-size="12" text-anchor="middle">board, fleet, shots, placement validation</text>
+  <rect class="node" x="560" y="414" width="330" height="50" rx="12"/>
+  <text class="ink" x="725" y="436" font-size="15" text-anchor="middle">ai.mjs</text>
+  <text class="sub" x="725" y="454" font-size="12" text-anchor="middle">notes, recall vote, hunt/target, doctrines</text>
+
+  <path class="edge" d="M725,468 L640,516" marker-end="url(#a)"/>
+
+  <!-- memory -->
+  <text class="lbl" x="60" y="512" font-size="13">MEMORY</text>
+  <rect class="band" x="40" y="500" width="920" height="62" rx="16"/>
+  <rect class="node" x="330" y="512" width="470" height="42" rx="12"/>
+  <text class="ink" x="565" y="530" font-size="15" text-anchor="middle">memory.mjs → ruvector</text>
+  <text class="sub" x="565" y="547" font-size="12" text-anchor="middle">64-dim n-gram vectors · cosine HNSW · RVF store + JSONL journal in data/</text>
+</svg>
+</div>
+</figure>
+<figure>
+  <figcaption><span>banner.svg</span><span class="dim">1200×360</span></figcaption>
+  <div class="frame"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="1200" height="360" role="img" aria-labelledby="t">
+  <title id="t">Abyssal Battleships — battleships against an opponent that remembers where you hide your fleet</title>
+  <defs>
+    <style>
+      :root{ --accent:#0d9488; --accent2:#5b4bd6; --on:#ffffff; --chip:#ffffff26; --sub:#ffffffd9; --grid:#ffffff1f; }
+      @media (prefers-color-scheme: dark){ :root{ --accent:#0b7d72; --accent2:#4a3bc0; } }
+      text{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+    </style>
+    <linearGradient id="hero" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="var(--accent)"/>
+      <stop offset="1" stop-color="var(--accent2)"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.82" cy="0.18" r="0.75">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="round"><rect x="0" y="0" width="1200" height="360" rx="24"/></clipPath>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="360" rx="24" fill="url(#hero)"/>
+
+  <!-- sonar rings + grid, clipped to the rounded banner -->
+  <g clip-path="url(#round)" opacity="0.9">
+    <g fill="none" stroke="var(--grid)" stroke-width="1.5">
+      <circle cx="1010" cy="180" r="60"/>
+      <circle cx="1010" cy="180" r="105"/>
+      <circle cx="1010" cy="180" r="150"/>
+      <line x1="860" y1="180" x2="1160" y2="180"/>
+      <line x1="1010" y1="30" x2="1010" y2="330"/>
+    </g>
+    <g fill="#ffffff">
+      <circle cx="1052" cy="140" r="5" opacity="0.95"/>
+      <circle cx="978" cy="221" r="4" opacity="0.75"/>
+      <circle cx="1084" cy="212" r="3.5" opacity="0.6"/>
+      <circle cx="963" cy="146" r="3" opacity="0.5"/>
+      <circle cx="1030" cy="252" r="3" opacity="0.45"/>
+    </g>
+  </g>
+
+  <rect x="0" y="0" width="1200" height="360" rx="24" fill="url(#glow)"/>
+
+  <text x="80" y="138" font-size="58" font-weight="800" fill="var(--on)" letter-spacing="-1">ABYSSAL BATTLESHIPS</text>
+  <text x="82" y="184" font-size="24" font-weight="400" fill="var(--sub)">Classic battleships against an opponent that remembers where you hide your fleet.</text>
+
+  <g font-size="16" font-weight="600" fill="var(--on)">
+    <rect x="80"  y="228" width="238" height="44" rx="22" fill="var(--chip)"/><text x="104" y="256">🧠 Learns across games</text>
+    <rect x="334" y="228" width="196" height="44" rx="22" fill="var(--chip)"/><text x="358" y="256">🔒 Sealed AI shots</text>
+    <rect x="546" y="228" width="176" height="44" rx="22" fill="var(--chip)"/><text x="570" y="256">📡 Live telemetry</text>
+    <rect x="738" y="228" width="118" height="44" rx="22" fill="var(--chip)"/><text x="762" y="256">⚡ No build</text>
+  </g>
+</svg>
+</div>
+</figure>
+<figure>
+  <figcaption><span>features.svg</span><span class="dim">1200×430</span></figcaption>
+  <div class="frame"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 430" width="1200" height="430" role="img" aria-labelledby="t">
+  <title id="t">Feature grid: learning opponent, sealed shots, telemetry, vector scope, three doctrines, and portable memory</title>
+  <defs>
+    <style>
+      :root{ --bg:#ffffff;--surface:#f6f8fa;--border:#d0d7de;--ink:#1f2328;--muted:#656d76;--accent:#0d9488;--accent2:#5b4bd6; }
+      @media (prefers-color-scheme: dark){ :root{ --bg:#0d1117;--surface:#161b22;--border:#30363d;--ink:#e6edf3;--muted:#8b949e;--accent:#2fe0cf;--accent2:#9d8cff; }}
+      text{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+      .card{ fill:var(--surface); stroke:var(--border); stroke-width:1.5; }
+      .t{ fill:var(--ink); font-weight:600; }
+      .d{ fill:var(--muted); }
+    </style>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--accent)"/><stop offset="1" stop-color="var(--accent2)"/></linearGradient>
+  </defs>
+
+  <rect width="1200" height="430" fill="var(--bg)"/>
+  <text x="40" y="46" font-size="27" class="t">What you get</text>
+
+  <!-- row 1 -->
+  <g>
+    <rect class="card" x="40"  y="70" width="360" height="152" rx="14"/>
+    <rect x="70" y="98" width="46" height="46" rx="12" fill="url(#g)"/><text x="93" y="129" font-size="22" text-anchor="middle">🧠</text>
+    <text class="t" x="132" y="118" font-size="18">It remembers you</text>
+    <text class="d" x="132" y="140" font-size="13">Every finished board is stored.</text>
+    <text class="d" x="70"  y="178" font-size="13">Repeat a habit — hugging edges, always</text>
+    <text class="d" x="70"  y="198" font-size="13">going horizontal — and it starts there.</text>
+  </g>
+  <g>
+    <rect class="card" x="420" y="70" width="360" height="152" rx="14"/>
+    <rect x="450" y="98" width="46" height="46" rx="12" fill="url(#g)"/><text x="473" y="129" font-size="22" text-anchor="middle">🔒</text>
+    <text class="t" x="512" y="118" font-size="18">Sealed shots</text>
+    <text class="d" x="512" y="140" font-size="13">It commits before you fire.</text>
+    <text class="d" x="450" y="178" font-size="13">You see a SHA-256 fingerprint first, then</text>
+    <text class="d" x="450" y="198" font-size="13">the page reopens it and checks the match.</text>
+  </g>
+  <g>
+    <rect class="card" x="800" y="70" width="360" height="152" rx="14"/>
+    <rect x="830" y="98" width="46" height="46" rx="12" fill="url(#g)"/><text x="853" y="129" font-size="22" text-anchor="middle">📡</text>
+    <text class="t" x="892" y="118" font-size="18">Honest telemetry</text>
+    <text class="d" x="892" y="140" font-size="13">Read rate against a real baseline.</text>
+    <text class="d" x="830" y="178" font-size="13">Exact-cell guessing is 1% blind, not 50% —</text>
+    <text class="d" x="830" y="198" font-size="13">the panel says so and shows both numbers.</text>
+  </g>
+
+  <!-- row 2 -->
+  <g>
+    <rect class="card" x="40"  y="242" width="360" height="152" rx="14"/>
+    <rect x="70" y="270" width="46" height="46" rx="12" fill="url(#g)"/><text x="93" y="301" font-size="22" text-anchor="middle">🎯</text>
+    <text class="t" x="132" y="290" font-size="18">Vector scope</text>
+    <text class="d" x="132" y="312" font-size="13">The recall behind each shot, drawn.</text>
+    <text class="d" x="70"  y="350" font-size="13">Each dot is one memory: nearer the middle</text>
+    <text class="d" x="70"  y="370" font-size="13">is more similar, red means it held a hull.</text>
+  </g>
+  <g>
+    <rect class="card" x="420" y="242" width="360" height="152" rx="14"/>
+    <rect x="450" y="270" width="46" height="46" rx="12" fill="url(#g)"/><text x="473" y="301" font-size="22" text-anchor="middle">⚔️</text>
+    <text class="t" x="512" y="290" font-size="18">Three doctrines</text>
+    <text class="d" x="512" y="312" font-size="13">Dominate, Level, Yield.</text>
+    <text class="d" x="450" y="350" font-size="13">They change what it does with a read —</text>
+    <text class="d" x="450" y="370" font-size="13">never how hard it reads you.</text>
+  </g>
+  <g>
+    <rect class="card" x="800" y="242" width="360" height="152" rx="14"/>
+    <rect x="830" y="270" width="46" height="46" rx="12" fill="url(#g)"/><text x="853" y="301" font-size="22" text-anchor="middle">💾</text>
+    <text class="t" x="892" y="290" font-size="18">Your memory, on disk</text>
+    <text class="d" x="892" y="312" font-size="13">Export it. Wipe it. No cloud.</text>
+    <text class="d" x="830" y="350" font-size="13">Episodes live in data/ as plain JSONL plus</text>
+    <text class="d" x="830" y="370" font-size="13">a ruvector index, rebuilt on every boot.</text>
+  </g>
+</svg>
+</div>
+</figure>
+<figure>
+  <figcaption><span>how-it-works.svg</span><span class="dim">1200×400</span></figcaption>
+  <div class="frame"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400" role="img" aria-labelledby="t">
+  <title id="t">How the opponent learns: a finished game becomes one memory per square, which is recalled and voted on before every future shot</title>
+  <defs>
+    <style>
+      :root{ --bg:#ffffff;--surface:#f6f8fa;--border:#d0d7de;--ink:#1f2328;--muted:#656d76;--accent:#0d9488;--accent2:#5b4bd6;--on:#ffffff; }
+      @media (prefers-color-scheme: dark){ :root{ --bg:#0d1117;--surface:#161b22;--border:#30363d;--ink:#e6edf3;--muted:#8b949e;--accent:#2fe0cf;--accent2:#9d8cff; } }
+      text{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+      .card{ fill:var(--surface); stroke:var(--border); stroke-width:1.5; }
+      .t{ fill:var(--ink); font-weight:600; }
+      .d{ fill:var(--muted); }
+      .num{ fill:var(--on); font-weight:700; }
+      .edge{ stroke:var(--accent); stroke-width:2; fill:none; }
+      .loop{ stroke:var(--accent2); stroke-width:2; fill:none; stroke-dasharray:6 5; }
+      .looplbl{ fill:var(--accent2); font-weight:600; }
+    </style>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="var(--accent)"/><stop offset="1" stop-color="var(--accent2)"/></linearGradient>
+    <marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker>
+    <marker id="b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent2)"/></marker>
+  </defs>
+
+  <rect width="1200" height="400" fill="var(--bg)"/>
+  <text x="60" y="58" font-size="27" class="t">How the opponent reads you</text>
+  <text x="60" y="86" font-size="14" class="d">One finished game turns into 100 small memories. Every later shot is a vote among the memories that look like right now.</text>
+
+  <!-- stage 1 -->
+  <g>
+    <rect class="card" x="60" y="124" width="250" height="150" rx="14"/>
+    <circle cx="96" cy="160" r="18" fill="url(#g)"/><text class="num" x="96" y="166" font-size="16" text-anchor="middle">1</text>
+    <text class="t" x="128" y="166" font-size="18">You finish a game</text>
+    <text class="d" x="84" y="208" font-size="13">Win or lose, the true position</text>
+    <text class="d" x="84" y="228" font-size="13">of your fleet is now known.</text>
+    <text class="d" x="84" y="252" font-size="13" style="fill:var(--accent)">17 hull squares of 100</text>
+  </g>
+  <line class="edge" x1="318" y1="199" x2="352" y2="199" marker-end="url(#a)"/>
+
+  <!-- stage 2 -->
+  <g>
+    <rect class="card" x="360" y="124" width="250" height="150" rx="14"/>
+    <circle cx="396" cy="160" r="18" fill="url(#g)"/><text class="num" x="396" y="166" font-size="16" text-anchor="middle">2</text>
+    <text class="t" x="428" y="166" font-size="18">Every square is noted</text>
+    <text class="d" x="384" y="208" font-size="13">A short code per square —</text>
+    <text class="d" x="384" y="228" font-size="13">edge, corner, parity, band —</text>
+    <text class="d" x="384" y="252" font-size="13">stored with: hull, or water.</text>
+  </g>
+  <line class="edge" x1="618" y1="199" x2="652" y2="199" marker-end="url(#a)"/>
+
+  <!-- stage 3 -->
+  <g>
+    <rect class="card" x="660" y="124" width="250" height="150" rx="14"/>
+    <circle cx="696" cy="160" r="18" fill="url(#g)"/><text class="num" x="696" y="166" font-size="16" text-anchor="middle">3</text>
+    <text class="t" x="728" y="166" font-size="18">ruvector recalls</text>
+    <text class="d" x="684" y="208" font-size="13">Each note becomes 64 numbers.</text>
+    <text class="d" x="684" y="228" font-size="13">Before a shot it finds the</text>
+    <text class="d" x="684" y="252" font-size="13">closest notes it has seen.</text>
+  </g>
+  <line class="edge" x1="918" y1="199" x2="952" y2="199" marker-end="url(#a)"/>
+
+  <!-- stage 4 -->
+  <g>
+    <rect class="card" x="960" y="124" width="180" height="150" rx="14"/>
+    <circle cx="996" cy="160" r="18" fill="url(#g)"/><text class="num" x="996" y="166" font-size="16" text-anchor="middle">4</text>
+    <text class="t" x="1028" y="166" font-size="18">It fires</text>
+    <text class="d" x="984" y="208" font-size="13">Closer and newer</text>
+    <text class="d" x="984" y="228" font-size="13">memories vote</text>
+    <text class="d" x="984" y="252" font-size="13">harder. Best cell wins.</text>
+  </g>
+
+  <!-- feedback loop -->
+  <path class="loop" d="M1050,282 L1050,336 L185,336 L185,282" marker-end="url(#b)"/>
+  <text class="looplbl" x="600" y="362" font-size="14" text-anchor="middle">every finished game adds 100 more memories — the read gets sharper each time you play</text>
+</svg>
+</div>
+</figure>
+</main>
+<script>
+  const body = document.body, btn = document.getElementById('toggle');
+  btn.addEventListener('click', () => {
+    const dark = body.classList.toggle('dark');
+    body.classList.toggle('light', !dark);
+    btn.textContent = dark ? 'Switch to light' : 'Switch to dark';
+  });
+</script>
+</body>
+</html>

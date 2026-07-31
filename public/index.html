@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ABYSSAL — vector-memory battleships</title>
+<meta name="description" content="Battleships against an opponent that stores every board as a ruvector memory and learns where you hide your fleet." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+<div class="shell">
+
+  <header class="top">
+    <div>
+      <h1>Abyssal <span>Battleships</span></h1>
+      <p class="eyebrow" style="margin-top:6px">vector-memory opponent · ruvector</p>
+    </div>
+    <div class="status-line">
+      <span class="dot"></span>
+      <span class="tiny" id="engine-status">booting memory engine…</span>
+      <button id="btn-sound" aria-pressed="true" style="margin-left:10px">Sound on</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <div style="display:flex;flex-direction:column;gap:18px">
+
+      <section class="panel">
+        <div id="scoreboard"></div>
+        <p class="readout tiny" id="phase" style="text-align:center;margin:14px 0 0;letter-spacing:.2em;text-transform:uppercase">place your fleet</p>
+
+        <div class="seal" style="margin-top:14px;justify-content:center">
+          <span class="eyebrow">sealed shot</span>
+          <span class="hash" id="seal-hash">—</span>
+          <span class="readout tiny" id="seal-verdict">—</span>
+        </div>
+        <details style="margin-top:10px">
+          <summary>why the next shot is locked</summary>
+          <p class="muted">Before you fire, the AI has already chosen its own target and shown you a fingerprint of it. After the round this page reopens the move, rebuilds the fingerprint and checks the two match — a single changed letter would scramble it. That proves the target did not change after you fired. It does not prove the target was chosen fairly: the opponent and the checker both run in this one process, so treat it as a working commit-and-reveal demonstration, not a referee.</p>
+        </details>
+      </section>
+
+      <div class="boards">
+        <section class="panel">
+          <div class="board-head">
+            <h2>Enemy waters</h2>
+            <span class="readout tiny" id="enemy-progress">0 / 17</span>
+          </div>
+          <div class="grid-wrap">
+            <div class="grid live" id="enemy-grid" role="grid" aria-label="enemy waters"></div>
+            <div class="sweep" id="enemy-sweep"></div>
+          </div>
+          <div class="fleet" id="enemy-fleet"></div>
+        </section>
+
+        <section class="panel">
+          <div class="board-head">
+            <h2>Your fleet</h2>
+            <span class="readout tiny" id="own-progress">0 / 17</span>
+          </div>
+          <div class="grid-wrap">
+            <div class="grid" id="own-grid" role="grid" aria-label="your fleet"></div>
+          </div>
+          <div class="fleet" id="own-fleet"></div>
+        </section>
+      </div>
+
+      <section class="panel" id="setup">
+        <p class="eyebrow">Deployment</p>
+        <div class="placement-hint" style="margin-top:10px">
+          <span class="muted" id="placement-msg">Click to drop the <b>Carrier</b>. Press <b>R</b> to rotate.</span>
+        </div>
+        <div class="controls" style="margin-top:12px">
+          <button id="btn-random">Scatter fleet</button>
+          <button id="btn-clear">Clear</button>
+          <button id="btn-engage" disabled>Engage</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <p class="eyebrow">Engagement log</p>
+        <div class="log" id="log" style="margin-top:10px"><p>Awaiting deployment.</p></div>
+      </section>
+
+    </div>
+
+    <aside style="display:flex;flex-direction:column;gap:18px">
+
+      <section class="panel">
+        <p class="eyebrow">Doctrine</p>
+        <div class="controls" style="margin-top:10px">
+          <button data-mode="dominate" aria-pressed="true">Dominate</button>
+          <button data-mode="level" aria-pressed="false">Level</button>
+          <button data-mode="yield" aria-pressed="false">Yield</button>
+        </div>
+        <p class="muted" id="mode-copy" style="margin-top:10px">Fires every read it gets. No handicap, no mercy.</p>
+        <details style="margin-top:8px">
+          <summary>what the doctrines change</summary>
+          <p class="muted">These change what the AI <b>does with a read</b>, not how hard it reads you — the prediction runs at full strength in all three. <b>Dominate</b> fires at the cell its memory rates highest. <b>Level</b> steers toward a tied score, wasting shots when it is ahead. <b>Yield</b> waits until its read is strong, then deliberately fires at the water it is most sure is empty; on a weak read it holds mid-table rather than throwing the shot at random.</p>
+        </details>
+      </section>
+
+      <section class="panel">
+        <p class="eyebrow">Telemetry</p>
+        <div class="stat-grid" style="margin-top:10px">
+          <div class="stat"><p class="eyebrow">episodes</p><p class="value readout" id="tl-episodes">0</p><p class="tiny" id="tl-episodes-sub">nothing stored</p></div>
+          <div class="stat"><p class="eyebrow">AI read rate</p><p class="value readout" id="tl-read">—</p><p class="tiny" id="tl-read-sub">no reads yet</p><div class="bar"><i id="tl-read-bar" style="width:0%"></i></div></div>
+          <div class="stat"><p class="eyebrow">win streak</p><p class="value readout" id="tl-streak">0</p><p class="tiny" id="tl-best">best 0</p></div>
+          <div class="stat"><p class="eyebrow">games</p><p class="value readout" id="tl-games">0</p><p class="tiny" id="tl-record">0W · 0L</p></div>
+        </div>
+        <details style="margin-top:10px">
+          <summary>how to read these numbers</summary>
+          <p class="muted">Read rate is how often the AI named your <b>exact</b> next cell before you fired it. The number to beat is 1%, not 50% — a blind guess on a hundred-cell grid is right once in a hundred. The sub-line also gives its within-two-cells rate, where blind guessing sits near 13%. Read rate is not the score: in Level or Yield the AI throws shots away on purpose, so you can be far ahead on points while it still reads you perfectly.</p>
+        </details>
+        <div class="controls" style="margin-top:12px">
+          <button id="btn-export">Export memory</button>
+          <button id="btn-reset" class="danger">Reset AI memory</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <p class="eyebrow">Instrument</p>
+        <div class="scope" id="scope" style="margin-top:10px">
+          <div class="scope-sweep"></div>
+          <div class="ring" style="width:32%;height:32%"></div>
+          <div class="ring" style="width:64%;height:64%"></div>
+          <div class="ring" style="width:96%;height:96%"></div>
+          <div class="cross" style="left:0;right:0;top:50%;height:1px"></div>
+          <div class="cross" style="top:0;bottom:0;left:50%;width:1px"></div>
+        </div>
+        <p class="tiny" id="scope-caption" style="margin-top:10px">Nothing recalled yet. The scope fills in once the AI has memories to search.</p>
+        <p class="eyebrow" style="margin-top:12px">context it matched</p>
+        <p class="hash" id="scope-note">—</p>
+        <details style="margin-top:10px">
+          <summary>how it reads you</summary>
+          <p class="muted">After every game the AI writes one short note per square of your ocean — where the square sits, how close to an edge or a corner, which parity, which band — and stores it against the truth of whether a hull was there. Those notes become fixed lists of 64 numbers in a <b>ruvector</b> store, so squares that resemble each other land near each other.</p>
+          <p class="muted">Before each of its shots it writes the note for every square it has not tried yet, finds the closest notes in memory, and lets them vote on whether you hide ships in places like that. Closer and more recent memories count for more. It is not reasoning about naval tactics — it is asking “when a square looked like this before, was there a hull under it?” A fresh memory gets classic hunt-and-target play; the more games you leave behind, the more the opening shots stop looking like guesses.</p>
+          <p class="muted">Each dot is one recalled memory: nearer the centre means more similar, bigger means it carried more weight, red means that memory held a hull.</p>
+        </details>
+      </section>
+
+      <section class="panel" id="forecast-panel">
+        <p class="eyebrow">Foresight</p>
+        <p class="muted" id="forecast" style="margin-top:8px">The AI is still bootstrapping — it has no read on your next shot yet.</p>
+        <div class="controls" style="margin-top:10px">
+          <button id="btn-foresight" aria-pressed="false">Show its guess on the grid</button>
+        </div>
+      </section>
+
+    </aside>
+  </div>
+</div>
+<script type="module" src="/app.js"></script>
+</body>
+</html>
