@@ -125,17 +125,21 @@ header.top { display: flex; align-items: center; justify-content: space-between;
 }
 .grid.shake { animation: shake .4s; }
 
-/* sweeping radar arm over the enemy grid while the AI thinks */
+/* sweeping radar arm over the enemy grid while the AI thinks.
+   The arm only animates while .on — an invisible element with a live
+   animation still keeps the compositor awake for nothing. */
 .sweep {
-  position: absolute; inset: 0; pointer-events: none; border-radius: 8px; overflow: hidden; opacity: 0;
-  transition: opacity .25s;
+  position: absolute; inset: 0; pointer-events: none; border-radius: 8px; overflow: hidden;
+  opacity: 0; visibility: hidden;
+  transition: opacity .25s, visibility 0s linear .25s;
 }
-.sweep.on { opacity: .55; }
+.sweep.on { opacity: .55; visibility: visible; transition: opacity .25s, visibility 0s; }
 .sweep::before {
   content: ""; position: absolute; inset: -30%;
   background: conic-gradient(from 0deg, transparent 0deg, #2fe0cf00 250deg, #2fe0cf55 350deg, #2fe0cf00 360deg);
-  animation: sweep 2.4s linear infinite;
+  will-change: transform;
 }
+.sweep.on::before { animation: sweep 2.4s linear infinite; }
 
 .axis-row { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; margin-bottom: 4px; }
 .axis-col { position: absolute; left: -16px; top: 0; bottom: 0; display: grid; grid-template-rows: repeat(10, 1fr); gap: 3px; }
@@ -271,7 +275,7 @@ button:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
 .blip.ship { background: var(--color-enemy); box-shadow: 0 0 10px #ff4f6d99; }
 .blip.empty { background: var(--color-hull); box-shadow: 0 0 8px #2fe0cf66; }
 .scope-sweep { position: absolute; inset: 0; }
-.scope-sweep::before { content: ""; position: absolute; inset: 0; background: conic-gradient(from 0deg, #2fe0cf00 0deg, #2fe0cf00 300deg, #2fe0cf30 358deg, #2fe0cf00 360deg); animation: sweep 3.6s linear infinite; }
+.scope-sweep::before { content: ""; position: absolute; inset: 0; background: conic-gradient(from 0deg, #2fe0cf00 0deg, #2fe0cf00 300deg, #2fe0cf30 358deg, #2fe0cf00 360deg); animation: sweep 3.6s linear infinite; will-change: transform; }
 
 .log { max-height: 190px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 4px; font-family: var(--font-mono); font-size: .6875rem; }
 .log p { margin: 0; color: var(--color-dim); }
@@ -340,8 +344,11 @@ details .muted { margin-top: 8px; }
   100% { transform: rotate(var(--a)) translateX(var(--d)) scale(.4); opacity: 0; }
 }
 
-/* a burning wreck keeps glowing after the blast clears */
-.cell.burning { background: #3d1206; border-color: #ff7a3c; box-shadow: inset 0 0 14px #ff7a3c66; animation: ember 1.6s ease-in-out infinite; }
+/* A burning wreck keeps glowing after the blast clears. The flicker is
+   deliberately finite: every sunk cell on both grids carries this class for the
+   rest of the game, and box-shadow cannot be composited — an infinite loop here
+   repaints ~32 cells every frame forever. It settles on the static glow. */
+.cell.burning { background: #3d1206; border-color: #ff7a3c; box-shadow: inset 0 0 14px #ff7a3c66; animation: ember 1.6s ease-in-out 3; }
 @keyframes ember { 0%, 100% { box-shadow: inset 0 0 12px #ff7a3c55; } 50% { box-shadow: inset 0 0 20px #ffb454aa; } }
 
 .fx-wash {
@@ -358,6 +365,13 @@ details .muted { margin-top: 8px; }
 @keyframes pulse-ring { 0% { opacity: .55; transform: scale(.7); } to { opacity: 0; transform: scale(1.6); } }
 @keyframes shake { 10%, 90% { transform: translateX(-2px); } 20%, 80% { transform: translateX(4px); } 30%, 50%, 70% { transform: translateX(-6px); } 40%, 60% { transform: translateX(6px); } }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+
+/* One switch for every looping ornament. app.js sets data-idle on <html> when
+   the tab is hidden, so the radar arms and blinking bulbs stop costing frames
+   against a surface nobody is looking at. */
+:root[data-idle="1"] *,
+:root[data-idle="1"] *::before,
+:root[data-idle="1"] *::after { animation-play-state: paused !important; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }

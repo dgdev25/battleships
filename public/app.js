@@ -5,9 +5,22 @@ import { buildScoreboard, setDisplay, flash } from './scoreboard.js';
 
 const SIZE = 10;
 const $ = (id) => document.getElementById(id);
+const REQUEST_TIMEOUT = 15000;
+// Every call carries a deadline. Without one a stalled connection leaves the
+// board locked with no way back, because the busy flag never clears.
 const api = async (url, body) => {
-  const res = await fetch(url, body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : {});
-  const data = await res.json();
+  const init = body
+    ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }
+    : {};
+  if (AbortSignal.timeout) init.signal = AbortSignal.timeout(REQUEST_TIMEOUT);
+  let res;
+  try {
+    res = await fetch(url, init);
+  } catch (err) {
+    if (err.name === 'TimeoutError' || err.name === 'AbortError') throw new Error('the server did not answer in time');
+    throw new Error('could not reach the server');
+  }
+  const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error ?? 'request failed');
   return data;
 };
@@ -71,29 +84,61 @@ function shipCells(spec, r, c, horizontal) {
   return cells;
 }
 
+// The occupied set is rebuilt only when the fleet actually moves. Hover used to
+// recompute it — and repaint all 100 cells — on every pointer event.
+let occupiedCache = null;
+let setupDirty = true;
+let previewCells = [];
+
+function fleetChanged() {
+  occupiedCache = null;
+  setupDirty = true;
+}
+
 function occupiedSet() {
+  if (occupiedCache) return occupiedCache;
   const set = new Set();
   for (const p of state.placement) {
     const spec = state.config.fleet.find((s) => s.id === p.id);
     for (const [r, c] of shipCells(spec, p.r, p.c, p.horizontal)) set.add(r * SIZE + c);
   }
+  occupiedCache = set;
   return set;
 }
 
-function renderOwnSetup(preview) {
+function paintSetupBase() {
   const taken = occupiedSet();
   for (let i = 0; i < SIZE * SIZE; i++) {
     const cell = ownGrid.children[i];
-    cell.className = `cell${taken.has(i) ? ' ship' : ''}`;
+    const next = `cell${taken.has(i) ? ' ship' : ''}`;
+    if (cell.className !== next) cell.className = next;
+  }
+}
+
+function renderOwnSetup(preview) {
+  // Only the cells that actually change get touched: drop the last preview,
+  // repaint the base layer if the fleet moved, then mark the new preview.
+  for (const cell of previewCells) cell.classList.remove('preview', 'bad');
+  previewCells.length = 0;
+  if (setupDirty) {
+    paintSetupBase();
+    setupDirty = false;
   }
   if (preview) {
     const { cells, ok } = preview;
-    for (const [r, c] of cells) cellAt(ownGrid, r, c).classList.add('preview', ...(ok ? [] : ['bad']));
+    for (const [r, c] of cells) {
+      const cell = cellAt(ownGrid, r, c);
+      cell.classList.add('preview');
+      if (!ok) cell.classList.add('bad');
+      previewCells.push(cell);
+    }
   }
   const spec = state.config.fleet[state.shipIndex];
-  $('placement-msg').innerHTML = spec
+  const msg = spec
     ? `Click to drop the <b>${spec.name}</b> (${spec.size}). Press <b>R</b> to rotate — currently <b>${state.horizontal ? 'horizontal' : 'vertical'}</b>.`
     : 'Fleet deployed. <b>Engage</b> when ready.';
+  const msgEl = $('placement-msg');
+  if (msgEl.innerHTML !== msg) msgEl.innerHTML = msg;
   $('btn-engage').disabled = state.placement.length !== state.config.fleet.length;
 }
 
@@ -118,12 +163,16 @@ function dropShip(r, c) {
   if (cells.some(([rr, cc]) => taken.has(rr * SIZE + cc))) return;
   state.placement.push({ id: spec.id, r, c, horizontal: state.horizontal });
   state.shipIndex += 1;
+  fleetChanged();
   renderOwnSetup();
 }
 
 function scatter() {
   state.placement = [];
   state.shipIndex = 0;
+  // One running set instead of rebuilding the whole occupancy map on every one
+  // of up to 800 retries per ship.
+  const taken = new Set();
   for (const spec of state.config.fleet) {
     for (let tries = 0; tries < 800; tries++) {
       const horizontal = Math.random() < 0.5;
@@ -131,13 +180,14 @@ function scatter() {
       const c = Math.floor(Math.random() * SIZE);
       const cells = shipCells(spec, r, c, horizontal);
       if (!cells) continue;
-      const taken = occupiedSet();
       if (cells.some(([rr, cc]) => taken.has(rr * SIZE + cc))) continue;
+      for (const [rr, cc] of cells) taken.add(rr * SIZE + cc);
       state.placement.push({ id: spec.id, r, c, horizontal });
       break;
     }
   }
   state.shipIndex = state.placement.length;
+  fleetChanged();
   renderOwnSetup();
 }
 
@@ -155,31 +205,43 @@ function renderBoard(grid, view, { showShips, sealCell, predicted }) {
     if (shot === 2) classes.push(sunkCells.has(i) ? 'sunk burning' : 'hit', 'spent');
     if (sealCell === i) classes.push('sealed');
     if (predicted === i) classes.push('predicted');
-    cell.className = classes.join(' ');
+    const next = classes.join(' ');
+    // Skipping unchanged cells keeps style invalidation off the ~95 cells that
+    // did not move this turn.
+    if (cell.className !== next) cell.className = next;
   }
 }
 
+// Rows are built once and then updated in place. Rebuilding both fleet lists
+// from scratch meant discarding and recreating ~64 elements on every shot.
 function renderFleet(el, view, mine) {
-  el.innerHTML = '';
-  for (const ship of view.fleet) {
-    const row = document.createElement('div');
-    row.className = `fleet-row${ship.sunk ? ' down' : ''}`;
-    const pips = document.createElement('span');
-    pips.className = 'pips';
-    for (let i = 0; i < ship.size; i++) {
-      const pip = document.createElement('i');
-      pip.className = `pip${ship.sunk ? '' : mine ? ' alive' : ' enemy'}`;
-      pips.appendChild(pip);
+  view.fleet.forEach((ship, i) => {
+    let row = el.children[i];
+    if (!row) {
+      row = document.createElement('div');
+      const pips = document.createElement('span');
+      pips.className = 'pips';
+      for (let p = 0; p < ship.size; p++) pips.appendChild(document.createElement('i'));
+      row.append(pips, document.createElement('span'));
+      el.appendChild(row);
     }
-    row.append(pips, Object.assign(document.createElement('span'), { textContent: ship.name.toUpperCase() }));
-    el.appendChild(row);
-  }
+    const rowClass = `fleet-row${ship.sunk ? ' down' : ''}`;
+    if (row.className !== rowClass) row.className = rowClass;
+    const pipClass = `pip${ship.sunk ? '' : mine ? ' alive' : ' enemy'}`;
+    for (const pip of row.firstElementChild.children) {
+      if (pip.className !== pipClass) pip.className = pipClass;
+    }
+    const name = ship.name.toUpperCase();
+    if (row.lastElementChild.textContent !== name) row.lastElementChild.textContent = name;
+  });
+  while (el.children.length > view.fleet.length) el.lastElementChild.remove();
 }
 
 function renderScope(scope) {
   const el = $('scope');
-  el.querySelectorAll('.blip').forEach((b) => b.remove());
+  const pool = el.querySelectorAll('.blip');
   if (!scope || !scope.matches?.length) {
+    pool.forEach((b) => b.remove());
     $('scope-caption').textContent = 'Nothing recalled yet. The scope fills in once the AI has memories to search.';
     $('scope-note').textContent = scope?.note ?? '—';
     return;
@@ -190,8 +252,13 @@ function renderScope(scope) {
   const lo = Math.min(...sims);
   const hi = Math.max(...sims);
   const span = hi - lo || 1;
+  // Blips are recycled rather than destroyed and rebuilt each recall.
   scope.matches.forEach((m, i) => {
-    const blip = document.createElement('div');
+    let blip = pool[i];
+    if (!blip) {
+      blip = document.createElement('div');
+      el.appendChild(blip);
+    }
     const norm = (m.similarity - lo) / span; // 1 = closest match in this recall
     const radius = 6 + (1 - norm) * 40; // nearer centre = more similar
     const angle = i * 2.399963; // golden angle, keeps the dots from stacking
@@ -201,8 +268,8 @@ function renderScope(scope) {
     blip.style.top = `${50 + radius * Math.sin(angle)}%`;
     blip.style.width = `${size}px`;
     blip.style.height = `${size}px`;
-    el.appendChild(blip);
   });
+  for (let i = scope.matches.length; i < pool.length; i++) pool[i].remove();
   const ships = scope.matches.filter((m) => m.occupied).length;
   $('scope-caption').innerHTML = `${scope.matches.length} memories recalled · <b>${ships}</b> held a hull · hull odds at its pick ${pct(scope.hullOdds ?? 0)} on ${pct(scope.support ?? 0)} support`;
   $('scope-note').textContent = scope.note ?? '—';
@@ -230,6 +297,21 @@ function tickClock() {
   setDisplay(state.board.clock, value);
 }
 
+// The clock is derived from startedAt, so it can be stopped and restarted
+// freely — it catches up rather than losing time.
+function stopClock() {
+  if (state.clockTimer) {
+    clearInterval(state.clockTimer);
+    state.clockTimer = null;
+  }
+}
+
+function startClock() {
+  stopClock();
+  state.clockTimer = setInterval(tickClock, 1000);
+  tickClock();
+}
+
 function renderTelemetry(t) {
   $('tl-episodes').textContent = t.episodes;
   $('tl-episodes-sub').textContent = `${t.placementEpisodes} board · ${t.shotEpisodes} shot`;
@@ -247,11 +329,17 @@ function renderTelemetry(t) {
   $('engine-status').textContent = `ruvector ${t.backend.version} · ${t.backend.implementation} · ${t.backend.dimensions}d · ${t.episodes} episodes`;
 }
 
+const LOG_LIMIT = 80;
+
 function log(text, kind = '') {
   const p = document.createElement('p');
   if (kind) p.className = kind;
   p.innerHTML = text;
-  $('log').prepend(p);
+  const el = $('log');
+  el.prepend(p);
+  // Ordinary play is bounded by the shot count, but a run of failed requests
+  // is not — the oldest lines are scrolled out of sight anyway.
+  while (el.children.length > LOG_LIMIT) el.lastElementChild.remove();
 }
 
 function renderGame(data, events) {
@@ -286,7 +374,7 @@ function renderGame(data, events) {
     enemyGrid.classList.remove('live');
     $('phase').textContent = data.winner === 'player' ? 'enemy fleet destroyed' : 'your fleet is gone';
     if (!alreadyOver) {
-      clearInterval(state.clockTimer);
+      stopClock();
       setTimeout(() => sfx.fanfare(data.winner === 'player'), 700);
     }
     if (!alreadyOver) log(data.winner === 'player'
@@ -303,11 +391,13 @@ function renderGame(data, events) {
 
 // ---------------- actions ----------------
 async function engage() {
+  if (state.busy) return; // a second click must not open a second game
   if (state.phase === 'over') {
     state.phase = 'setup';
     state.placement = [];
     state.shipIndex = 0;
     state.game = null;
+    fleetChanged();
     $('btn-engage').textContent = 'Engage';
     $('log').innerHTML = '<p>Awaiting deployment.</p>';
     enemyGrid.querySelectorAll('.cell').forEach((c) => { c.className = 'cell'; });
@@ -317,19 +407,23 @@ async function engage() {
   }
   if (state.placement.length !== state.config.fleet.length) return;
   state.busy = true;
+  $('btn-engage').disabled = true;
   $('enemy-sweep').classList.add('on');
   sfx.unlock();
-  const data = await api('/api/game', { mode: state.mode, placement: state.placement });
-  state.phase = 'battle';
-  enemyGrid.classList.add('live');
-  state.startedAt = Date.now();
-  clearInterval(state.clockTimer);
-  state.clockTimer = setInterval(tickClock, 1000);
-  tickClock();
-  log('Engagement opened. AI has sealed its first target.');
-  renderGame(data);
-  $('enemy-sweep').classList.remove('on');
-  state.busy = false;
+  try {
+    const data = await api('/api/game', { mode: state.mode, placement: state.placement });
+    state.phase = 'battle';
+    enemyGrid.classList.add('live');
+    state.startedAt = Date.now();
+    startClock();
+    log('Engagement opened. AI has sealed its first target.');
+    renderGame(data);
+  } finally {
+    // Without this the board stays locked forever on a failed or timed-out open.
+    $('enemy-sweep').classList.remove('on');
+    $('btn-engage').disabled = state.phase === 'setup' && state.placement.length !== state.config.fleet.length;
+    state.busy = false;
+  }
 }
 
 async function shoot(r, c) {
@@ -416,7 +510,26 @@ $('btn-sound').addEventListener('click', (e) => {
   if (!next) sfx.launch();
 });
 $('btn-random').addEventListener('click', scatter);
-$('btn-clear').addEventListener('click', () => { state.placement = []; state.shipIndex = 0; renderOwnSetup(); });
+$('btn-clear').addEventListener('click', () => {
+  state.placement = [];
+  state.shipIndex = 0;
+  fleetChanged();
+  renderOwnSetup();
+});
+
+// A backgrounded tab should cost nothing: the looping radar arms and blinking
+// bulbs park, the audio thread suspends, and the clock stops ticking.
+document.addEventListener('visibilitychange', () => {
+  const hidden = document.hidden;
+  document.documentElement.dataset.idle = hidden ? '1' : '0';
+  if (hidden) {
+    sfx.pause();
+    stopClock();
+  } else {
+    sfx.resume();
+    if (state.phase === 'battle' && state.startedAt) startClock();
+  }
+});
 $('btn-engage').addEventListener('click', () => engage().catch((e) => log(`<b>${e.message}</b>`, 'enemy')));
 $('btn-foresight').addEventListener('click', (e) => {
   state.foresight = !state.foresight;

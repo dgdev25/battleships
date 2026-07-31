@@ -24,12 +24,45 @@ export function isMuted() {
 export function setMuted(next) {
   muted = next;
   localStorage.setItem('abyssal-muted', muted ? '1' : '0');
-  if (master) master.gain.setTargetAtTime(muted ? 0 : 0.9, ctx.currentTime, 0.02);
+  if (!master) return;
+  master.gain.setTargetAtTime(muted ? 0 : 0.9, ctx.currentTime, 0.02);
+  // Silence is not the same as stopped — park the audio thread while muted.
+  if (muted) setTimeout(() => { if (muted && ctx.state === 'running') ctx.suspend(); }, 120);
+  else if (ctx.state === 'suspended') ctx.resume();
 }
 
 export function unlock() {
   const c = ensure();
-  if (c && c.state === 'suspended') c.resume();
+  if (c && c.state === 'suspended' && !muted) c.resume();
+}
+
+// Called when the tab goes to the background: nothing is audible there anyway.
+export function pause() {
+  if (ctx && ctx.state === 'running') ctx.suspend();
+}
+
+export function resume() {
+  if (ctx && ctx.state === 'suspended' && !muted) ctx.resume();
+}
+
+// Noise buffers are generated once per duration and reused. Filling one is a
+// per-sample JS loop — a sinking ship asked for ~117k samples across four
+// buffers, synchronously on the main thread, every single time it happened.
+// The kit only uses a handful of distinct durations, so the cache stays tiny.
+const noiseBuffers = new Map();
+
+function noiseBuffer(c, duration) {
+  const cached = noiseBuffers.get(duration);
+  if (cached && cached.sampleRate === c.sampleRate) return cached;
+  const frames = Math.floor(c.sampleRate * duration);
+  const buffer = c.createBuffer(1, frames, c.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < frames; i++) {
+    // fade the raw noise so long tails decay instead of cutting off
+    data[i] = (Math.random() * 2 - 1) * (1 - i / frames) ** 1.4;
+  }
+  noiseBuffers.set(duration, buffer);
+  return buffer;
 }
 
 // A burst of white noise, shaped by an envelope and a filter. This is the
@@ -38,15 +71,8 @@ function noise(duration, { type = 'lowpass', freq = 900, q = 0.8, gain = 0.5, at
   const c = ensure();
   if (!c || muted) return;
   const t0 = c.currentTime + delay;
-  const frames = Math.floor(c.sampleRate * duration);
-  const buffer = c.createBuffer(1, frames, c.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < frames; i++) {
-    // fade the raw noise so long tails decay instead of cutting off
-    data[i] = (Math.random() * 2 - 1) * (1 - i / frames) ** 1.4;
-  }
   const src = c.createBufferSource();
-  src.buffer = buffer;
+  src.buffer = noiseBuffer(c, duration);
   const filter = c.createBiquadFilter();
   filter.type = type;
   filter.frequency.setValueAtTime(freq, t0);

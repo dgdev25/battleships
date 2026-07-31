@@ -25,7 +25,18 @@ if (!Number.isInteger(PORT) || PORT <= 0) {
 }
 
 const memory = await new Memory(DATA_DIR).init();
+// Sessions are in RAM and finished games are dropped as soon as they end, but a
+// player who closes the tab mid-game leaves one behind — those expire.
 const games = new Map();
+const GAME_TTL_MS = 6 * 60 * 60 * 1000;
+
+function sweepGames() {
+  const cutoff = Date.now() - GAME_TTL_MS;
+  for (const [id, game] of games) {
+    if (game.touched < cutoff) games.delete(id);
+  }
+}
+setInterval(sweepGames, 30 * 60 * 1000).unref();
 
 const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.json': 'application/json' };
 
@@ -121,6 +132,7 @@ async function newGame(body) {
     winner: null,
     ai: new Opponent(memory, mode),
     forecast: null,
+    touched: Date.now(),
   };
   games.set(game.id, game);
   const seal = await sealNext(game);
@@ -132,6 +144,7 @@ async function fireShot(body) {
   const game = games.get(body?.gameId);
   if (!game) return { code: 404, body: { error: 'no such game' } };
   if (game.over) return { code: 409, body: { error: 'game is over' } };
+  game.touched = Date.now();
   const r = Number(body.r);
   const c = Number(body.c);
 
@@ -179,7 +192,10 @@ async function fireShot(body) {
     }
     memory.stats.bestStreak = Math.max(memory.stats.bestStreak, memory.stats.streak);
     memory.saveStats();
-    return { code: 200, body: snapshot(game, { events, seal: null }) };
+    const final = snapshot(game, { events, seal: null });
+    // The board is fully described by this snapshot; nothing needs the session.
+    games.delete(game.id);
+    return { code: 200, body: final };
   }
 
   const seal = await sealNext(game);
@@ -209,7 +225,14 @@ async function serveStatic(req, res) {
   }
   try {
     const data = await readFile(file);
-    res.writeHead(200, { 'content-type': MIME[path.extname(file)] ?? 'application/octet-stream' });
+    const ext = path.extname(file);
+    // The document always revalidates so a deploy is picked up; its assets are
+    // allowed a short life so a reload does not refetch every file.
+    const cache = ext === '.html' ? 'no-cache' : 'public, max-age=300';
+    res.writeHead(200, {
+      'content-type': MIME[ext] ?? 'application/octet-stream',
+      'cache-control': cache,
+    });
     res.end(data);
   } catch {
     res.writeHead(404, { 'content-type': 'text/plain' }).end('not found');
