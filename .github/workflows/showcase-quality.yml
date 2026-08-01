@@ -1,0 +1,36 @@
+name: Showcase quality
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: node --check src/server.mjs
+      - run: docker build -t battleships-showcase -f deploy/Dockerfile.showcase .
+      - name: Validate constrained container contract
+        run: |
+          docker run -d --name battleships-showcase -p 127.0.0.1:18080:8080 \
+            --read-only --tmpfs /tmp:rw,noexec,nosuid,size=32m battleships-showcase
+          trap 'docker rm -f battleships-showcase' EXIT
+          for attempt in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:18080/health && break
+            sleep 1
+          done
+          test "$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/api/memory/export)" = 404
+          test "$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/api/memory/reset)" = 404
+          test "$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/audio/ww2-sea-background.mp3)" = 404

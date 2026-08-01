@@ -1,0 +1,96 @@
+schemaVersion: 1
+title: Abyssal Battleships
+summary: "A browser strategy game where a vector-memory opponent learns from completed synthetic boards."
+description: |
+  Abyssal Battleships is a self-contained game demonstration of local vector
+  recall, commit-and-reveal targeting, and explainable game telemetry. The
+  hosted build has no accounts, credentials, uploads, or external providers.
+  It retains only anonymous board-coordinate episodes in the container's
+  ephemeral filesystem while the demo is running; an image restart starts the
+  learning corpus again. Public export and memory-reset controls are removed.
+tags: [game, vector-memory, ruvector, nodejs, explainable-ai]
+screenshots: []
+technicalMaps:
+  workflow:
+    url: https://raw.githubusercontent.com/dgdev25/battleships/master/docs/project-page/battleships-workflow-map.png
+    alt: "Technical workflow map: fleet placement, sealed AI target, player shot, reveal, telemetry, and anonymous vector-memory learning."
+  architecture:
+    url: https://raw.githubusercontent.com/dgdev25/battleships/master/docs/project-page/battleships-architecture-map.png
+    alt: "Technical architecture map: browser game client, Node game API, in-process session store, ephemeral ruvector journal, and no external service boundary."
+visibility: public-card
+port: 8080
+healthPath: /health
+deploy:
+  mode: dockerfile
+  dockerfile: deploy/Dockerfile.showcase
+env: {}
+resources: small
+lifecycle:
+  sleepable: true
+  sleepAfterMinutes: 30
+requiresDatabase: false
+category: Interactive systems
+completion: 78
+statusLabel: Public anonymous gameplay demo · ephemeral learning state
+overview: >-
+  A playable Battleships system that makes its opponent's learning surface
+  inspectable. Every AI shot is committed before the player fires, then revealed
+  after the turn; telemetry exposes the anonymous board memories that informed
+  its next choice. The showcase is intentionally self-contained: no account,
+  user profile, external API, or persistent service is involved.
+techStack:
+  - name: Vanilla JavaScript
+    label: Accessible board and effect rendering
+  - name: Node.js 22
+    label: Small JSON game API and static-file server
+  - name: ruvector
+    label: Local n-gram embedding and vector recall
+  - name: Commit-reveal
+    label: SHA-256 target integrity check
+howItWorks:
+  kicker: ABYSSAL · MEMORY GAME LOOP
+  heading: A shot is chosen before the player can influence it
+  subhead: The public build demonstrates mechanics with anonymous board coordinates only.
+  steps:
+    - label: "01 · PLACE"
+      title: Deploy a fleet
+      lines: ["Browser validates a standard five-ship fleet", "No identity or account is created"]
+    - label: "02 · COMMIT"
+      title: Seal the AI target
+      lines: ["Vector recall and hunt rules select a square", "A SHA-256 commitment is returned before fire"]
+    - label: "03 · EXCHANGE"
+      title: Resolve one turn
+      lines: ["Player shot is validated server-side", "AI reveal is checked against the commitment"]
+    - label: "04 · EXPLAIN"
+      title: Render game telemetry
+      lines: ["Read confidence and recalled episodes are shown", "Enemy fleet geometry remains reveal-gated"]
+    - label: "05 · LEARN"
+      title: Store anonymous outcomes
+      lines: ["Completed boards become coordinate-only episodes", "Ephemeral container state resets on restart"]
+  guarantees:
+    - No accounts, uploads, or visitor identifiers
+    - No third-party API or model-provider traffic
+    - Public build disables memory export and reset
+architecture:
+  kicker: ABYSSAL · DEMO BOUNDARY
+  heading: One contained game service, no external dependency surface
+  subhead: The browser talks only to a constrained Node process inside the invite-gated demo host.
+  columns:
+    - label: Browser experience
+      nodes:
+        - title: Board and telemetry client
+          lines: ["Fleet placement and keyboard controls", "Visualised recall and commit verification"]
+    - label: Game boundary
+      nodes:
+        - title: Node HTTP game service
+          lines: ["Bounded JSON requests", "Ephemeral in-process game sessions"]
+        - title: Target commitment engine
+          lines: ["Random nonce and SHA-256 hash", "Reveal only after player action"]
+    - label: Local demo state
+      nodes:
+        - title: ruvector journal
+          lines: ["N-gram embedding of board coordinates", "Ephemeral filesystem; no mounted volume"]
+          variant: boundary
+        - title: Explicit absence of external services
+          lines: ["No identity provider, database, or model API", "No credential or user-data boundary"]
+          variant: boundary

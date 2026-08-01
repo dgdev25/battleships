@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Abyssal Battleships — technical architecture</title>
+  <style>
+    * { box-sizing: border-box; } html,body { width:1600px;height:930px;margin:0;overflow:hidden;background:#061217;color:#e7f5f6;font-family:Inter,ui-sans-serif,system-ui,sans-serif; }
+    body { padding:64px 70px; background:radial-gradient(circle at 91% 7%,rgba(232,170,45,.16),transparent 25%),linear-gradient(145deg,#07161b,#061015 60%,#07191f); }
+    .eyebrow { color:#55d4cb;font:700 16px/1.2 ui-monospace,monospace;letter-spacing:.16em;margin:0 0 18px; } h1 { font-size:42px;line-height:56px;margin:0;padding-bottom:1px;letter-spacing:-.04em; } .lede { color:#9fb8bd;font-size:18px;line-height:1.5;margin:16px 0 34px;max-width:1120px; }
+    .grid { display:grid;grid-template-columns:1fr 1.42fr 1fr;gap:22px;align-items:stretch; } .column { min-height:500px;padding:21px;border:1px solid rgba(103,220,214,.25);border-radius:20px;background:linear-gradient(160deg,rgba(12,48,54,.92),rgba(7,28,34,.96)); } .column.boundary { border-color:rgba(238,174,58,.45);background:linear-gradient(160deg,rgba(55,40,14,.78),rgba(12,28,31,.96)); }
+    .column h2 { color:#56d5cc;font:700 14px/18px ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;margin:0 0 19px; } .boundary h2 { color:#f2bb46; }
+    .node { position:relative;border:1px solid rgba(151,220,219,.22);border-radius:13px;padding:17px 18px;background:rgba(4,20,25,.52);margin-bottom:14px; } .node:last-child { margin-bottom:0; } .node h3 { margin:0 0 8px;font-size:20px;line-height:28px;padding-bottom:1px;letter-spacing:-.02em; } .node p { margin:0;color:#b7cbce;font-size:14px;line-height:1.4; } .node small { display:block;color:#77d8d1;font:700 11px/15px ui-monospace,monospace;letter-spacing:.08em;margin-top:12px;text-transform:uppercase; } .boundary .node small { color:#f2bb46; }
+    .arrow { text-align:center;color:#f2bb46;font-size:25px;height:36px;line-height:28px; } .connector { color:#7bd9d3;font:700 12px/1.2 ui-monospace,monospace;letter-spacing:.09em;text-align:center;margin:-6px 0 8px; }
+    .footer { margin-top:24px;display:grid;grid-template-columns:1.25fr 1fr;gap:18px; } .bar { border:1px solid rgba(103,220,214,.2);border-radius:13px;padding:16px 19px;background:#0a2228;color:#b7cbce;font-size:14px;line-height:1.35; } .bar strong { color:#f2bb46;font-size:12px;letter-spacing:.11em;text-transform:uppercase;margin-right:11px; }
+  </style>
+</head>
+<body>
+  <p class="eyebrow">ABYSSAL / HOSTED DEMO ARCHITECTURE</p>
+  <h1>Contained gameplay, explicit state boundaries</h1>
+  <p class="lede">The demo is a single low-privilege Node process behind the platform invite gate. It serves static game assets, holds transient game sessions in memory, and uses a local ruvector journal only for anonymous coordinate recall.</p>
+  <section class="grid" aria-label="Architecture boundaries">
+    <article class="column"><h2>Browser experience</h2><div class="node"><h3>Accessible game client</h3><p>Vanilla JavaScript builds two coordinate boards, fleet previews, audio controls, and keyboard interactions.</p><small>Static HTML / CSS / JS</small></div><div class="arrow">↓</div><div class="node"><h3>Telemetry visualisation</h3><p>Displays AI confidence, recalled episode counts, and commitment verification without exposing the enemy fleet.</p><small>Read-only rendering</small></div></article>
+    <article class="column"><h2>Contained Node boundary</h2><div class="node"><h3>HTTP request gate</h3><p>Small JSON API with 256 KB body ceiling, short request deadlines, no-store responses, and explicit route methods.</p><small>/api/config · /api/game · /api/fire</small></div><div class="connector">VALIDATED GAME COMMANDS</div><div class="node"><h3>Game + integrity engine</h3><p>Owns fleets, hit state, turn order, AI target selection, nonce creation, and post-shot reveal verification.</p><small>In-process sessions · 6 h TTL</small></div><div class="connector">ANONYMOUS COORDINATE EVENTS</div><div class="node"><h3>Local vector adapter</h3><p>N-gram embeddings rank similar board positions; no remote model call or externally supplied embedding is used.</p><small>ruvector · 64 dimensions</small></div></article>
+    <article class="column boundary"><h2>Data and trust limits</h2><div class="node"><h3>Ephemeral journal</h3><p>Placement and shot coordinates exist in the container filesystem only. No mounted data volume or backup target is configured.</p><small>Resets on image restart</small></div><div class="arrow">×</div><div class="node"><h3>Absent services</h3><p>No database, identity provider, payment system, model provider, upload path, or browser API key exists in the hosted build.</p><small>No external dependency surface</small></div><div class="arrow">×</div><div class="node"><h3>Admin actions removed</h3><p>Public showcase mode withholds memory export and reset routes and removes their browser controls.</p><small>Local developer workflow only</small></div></article>
+  </section>
+  <section class="footer"><div class="bar"><strong>Ingress</strong> Invite gate → reverse proxy → non-root Node process on port 8080. The process has no Docker socket, host mount, environment secret, or database credential.</div><div class="bar"><strong>Egress</strong> Browser assets and game API only. The architecture intentionally emits no third-party network request during play.</div></section>
+</body>
+</html>

@@ -557,6 +557,11 @@ async function boot() {
   $('tl-record').textContent = `${state.config.stats.playerWins}W · ${state.config.stats.aiWins}L`;
   $('tl-streak').textContent = state.config.stats.streak;
   $('tl-best').textContent = `best ${state.config.stats.bestStreak}`;
+  if (state.config.showcaseMode) {
+    // A public demo never offers a shared-state export or destructive reset.
+    $('btn-export').hidden = true;
+    $('btn-reset').hidden = true;
+  }
 }
 
 $('btn-sound').addEventListener('click', (e) => {

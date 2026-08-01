@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Abyssal Battleships — technical workflow</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width: 1600px; height: 930px; margin: 0; overflow: hidden; background: #061217; color: #e7f5f6; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    body { padding: 64px 70px; background: radial-gradient(circle at 88% 0%, rgba(16,178,185,.18), transparent 27%), linear-gradient(145deg,#07161b,#061015 60%,#07191f); }
+    .eyebrow { color:#55d4cb; font:700 16px/1.2 ui-monospace,monospace; letter-spacing:.16em; margin:0 0 18px; }
+    h1 { font-size:42px; line-height:56px; margin:0; padding-bottom:1px; letter-spacing:-.04em; }
+    .lede { color:#9fb8bd; font-size:18px; line-height:1.5; margin:16px 0 36px; max-width:1060px; }
+    .flow { display:grid; grid-template-columns: repeat(5, 1fr); gap:20px; align-items:stretch; }
+    .stage { min-height:396px; border:1px solid rgba(103,220,214,.25); border-radius:20px; padding:24px; background:linear-gradient(160deg,rgba(12,48,54,.92),rgba(7,28,34,.96)); position:relative; overflow:hidden; }
+    .stage:nth-child(odd) { border-color:rgba(238,174,58,.40); background:linear-gradient(160deg,rgba(55,40,14,.78),rgba(12,28,31,.96)); }
+    .stage:not(:last-child)::after { content:'→'; position:absolute; right:-34px; top:178px; z-index:2; color:#f0b83f; font-size:30px; font-weight:800; }
+    .num { color:#59d7cf; font:700 14px/1 ui-monospace,monospace; letter-spacing:.13em; }
+    .stage:nth-child(odd) .num { color:#f2bb46; }
+    h2 { margin:20px 0 14px; font-size:25px; line-height:34px; padding-bottom:1px; letter-spacing:-.025em; }
+    p { margin:0; color:#b7cbce; font-size:16px; line-height:1.43; }
+    ul { list-style:none; margin:22px 0 0; padding:0; display:grid; gap:10px; }
+    li { padding:10px 11px; border:1px solid rgba(136,205,204,.18); border-radius:9px; background:rgba(3,18,23,.38); color:#cbe0e1; font-size:14px; line-height:1.25; }
+    .facts { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:30px; }
+    .fact { min-height:95px; padding:17px 19px; border-radius:13px; background:#0a2228; border:1px solid rgba(103,220,214,.19); }
+    .fact strong { display:block; color:#f2bb46; font-size:13px; letter-spacing:.1em; text-transform:uppercase; margin-bottom:8px; }
+    .fact span { color:#b7cbce; font-size:14px; line-height:1.3; }
+  </style>
+</head>
+<body>
+  <p class="eyebrow">ABYSSAL / HOSTED DEMO WORKFLOW</p>
+  <h1>One transparent turn: commit, exchange, reveal, learn</h1>
+  <p class="lede">A public player controls a browser board. The contained Node service validates game commands, commits an AI target before the player fires, and stores only anonymous board-coordinate outcomes in ephemeral local vector memory.</p>
+  <section class="flow" aria-label="Game workflow">
+    <article class="stage"><div class="num">01 · PLACE</div><h2>Deploy five ships</h2><p>Client-side geometry previews and validates a standard 17-cell fleet.</p><ul><li>Keyboard rotation + visible coordinates</li><li>No account, upload, or identity record</li></ul></article>
+    <article class="stage"><div class="num">02 · COMMIT</div><h2>Choose and seal target</h2><p>Hunt rules and ruvector recall rank eligible cells before the player shot.</p><ul><li>Random nonce + SHA-256 commitment</li><li>Target location stays hidden</li></ul></article>
+    <article class="stage"><div class="num">03 · FIRE</div><h2>Validate player shot</h2><p>Bounded JSON request resolves one player impact against a server-owned enemy board.</p><ul><li>Enemy geometry stays reveal-gated</li><li>Duplicate and invalid shots rejected</li></ul></article>
+    <article class="stage"><div class="num">04 · REVEAL</div><h2>Resolve return fire</h2><p>The precommitted target and nonce are revealed after the player action.</p><ul><li>Browser recomputes commitment hash</li><li>Telemetry exposes confidence, not secrets</li></ul></article>
+    <article class="stage"><div class="num">05 · LEARN</div><h2>Record an outcome</h2><p>Finished games append coordinate-only placement and shot episodes for later similarity recall.</p><ul><li>Ephemeral container filesystem only</li><li>No public export or reset endpoint</li></ul></article>
+  </section>
+  <section class="facts" aria-label="Workflow guarantees">
+    <div class="fact"><strong>Data boundary</strong><span>Only anonymous board positions and hit outcomes are retained while this container is alive.</span></div>
+    <div class="fact"><strong>Service boundary</strong><span>The browser uses the game host only; there is no model provider, identity service, database, or browser secret.</span></div>
+    <div class="fact"><strong>Integrity boundary</strong><span>Commit-and-reveal proves that the AI target did not change after the player shot was received.</span></div>
+  </section>
+</body>
+</html>

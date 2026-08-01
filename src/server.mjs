@@ -16,6 +16,10 @@ import {
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(here, '..', 'public');
 const DATA_DIR = process.env.BATTLE_DATA_DIR ?? path.join(here, '..', 'data');
+// The hosted portfolio build has no identity, account, or durable visitor
+// data. Its short-lived vector journal demonstrates the game mechanic, while
+// administrative export/reset controls stay available only to a local owner.
+const SHOWCASE_MODE = process.env.BATTLE_SHOWCASE_MODE === 'true';
 // Port is owned by start.sh and cascades in through the environment — no
 // hardcoded number lives in the app.
 const PORT = Number(process.env.PORT);
@@ -42,7 +46,12 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=u
 
 const json = (res, code, body) => {
   const payload = JSON.stringify(body);
-  res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+  res.writeHead(code, {
+    'content-type': 'application/json; charset=utf-8',
+    'cache-control': 'no-store',
+    'x-content-type-options': 'nosniff',
+    'referrer-policy': 'same-origin',
+  });
   res.end(payload);
 };
 
@@ -243,6 +252,8 @@ async function serveStatic(req, res) {
     res.writeHead(200, {
       'content-type': MIME[ext] ?? 'application/octet-stream',
       'cache-control': cache,
+      'x-content-type-options': 'nosniff',
+      'referrer-policy': 'same-origin',
     });
     res.end(data);
   } catch {
@@ -253,8 +264,19 @@ async function serveStatic(req, res) {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   try {
-    if (url.pathname === '/api/config') {
-      return json(res, 200, { size: SIZE, fleet: FLEET, modes: MODES, backend: memory.backend(), stats: memory.stats, episodes: memory.episodes });
+    if (url.pathname === '/health' && req.method === 'GET') {
+      return json(res, 200, { status: 'healthy', mode: SHOWCASE_MODE ? 'synthetic-showcase' : 'local' });
+    }
+    if (url.pathname === '/api/config' && req.method === 'GET') {
+      return json(res, 200, {
+        size: SIZE,
+        fleet: FLEET,
+        modes: MODES,
+        backend: memory.backend(),
+        stats: memory.stats,
+        episodes: memory.episodes,
+        showcaseMode: SHOWCASE_MODE,
+      });
     }
     if (url.pathname === '/api/game' && req.method === 'POST') {
       return json(res, 200, await newGame(await readBody(req)));
@@ -263,10 +285,10 @@ const server = http.createServer(async (req, res) => {
       const out = await fireShot(await readBody(req));
       return json(res, out.code, out.body);
     }
-    if (url.pathname === '/api/memory/export') {
+    if (url.pathname === '/api/memory/export' && !SHOWCASE_MODE) {
       return json(res, 200, memory.export());
     }
-    if (url.pathname === '/api/memory/reset' && req.method === 'POST') {
+    if (url.pathname === '/api/memory/reset' && req.method === 'POST' && !SHOWCASE_MODE) {
       await memory.reset();
       games.clear();
       return json(res, 200, { ok: true, episodes: memory.episodes });
@@ -274,9 +296,13 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname.startsWith('/api/')) return json(res, 404, { error: 'unknown endpoint' });
     return await serveStatic(req, res);
   } catch (err) {
-    return json(res, 400, { error: err.message });
+    console.error('request failed', err);
+    return json(res, 400, { error: 'invalid request' });
   }
 });
+
+server.requestTimeout = 15_000;
+server.headersTimeout = 16_000;
 
 server.listen(PORT, () => {
   const info = memory.backend();

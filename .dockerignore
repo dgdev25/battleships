@@ -1,0 +1,12 @@
+.git
+.github
+node_modules
+data
+logs
+memory
+assets
+README.md
+start.sh
+repomanifest.md
+.showcase
+deploy
