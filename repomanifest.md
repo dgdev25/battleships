@@ -18,7 +18,7 @@ after a player shot.
 - `npm ci` completed with **0 reported vulnerabilities** and `npm test` passed
   **16/16** tests on 2026-08-01.
 - The source has no account, credential, upload, payment, model-provider, or
-  browser secret path. Game inputs are bounded to 256 KB; authoritative enemy
+  third-party browser request path. Game inputs are bounded to 256 KB; authoritative enemy
   ship geometry is omitted until the end of a game.
 - `deploy/Dockerfile.showcase` builds a non-root Node 22 image, exposes only
   port 8080, uses no mounted volume, and passes a read-only-root filesystem
