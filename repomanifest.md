@@ -1,7 +1,7 @@
 # Repository deployment manifest — Abyssal Battleships
 
 **Audited:** 2026-08-01  
-**Deployment decision:** Candidate — container and public-demo contract prepared; register only after final source/CI and hosted acceptance.
+**Deployment decision:** Published — invite-gated public anonymous gameplay demo on the Leaseweb VPS.
 
 ## What it is
 
@@ -43,13 +43,22 @@ not visitor identifiers. There is no volume, backup target, database, or
 external network dependency, so a container/image restart discards them.
 The invite-gated platform remains the sole access boundary.
 
-## Remaining admission actions
+## Hosted acceptance — 2026-08-01
 
-1. Commit and push this readiness set to the owned source origin; add the
-   existing project-level CI gate if it is absent.
-2. Register as `public-card`, build on Leaseweb, then confirm internal health,
-   external TLS/invite gate, bundled audio assets, and an actual one-turn browser
-   flow with a temporary invite.
-3. Copy the checked PNGs to the portfolio's product-map asset set, add the
-   catalogue preview record, and run desktop/mobile visual acceptance at
-   `https://lyledg.com/project/battleships`.
+- Source commits `03d40ea`, `9927582`, `0245a5e`, and `ab50bcb` each passed
+  the GitHub Actions quality workflow: clean install, **16/16** tests, source
+  syntax check, image build, and constrained container contract.
+- Leaseweb application `wvvc613bg6nhxf0bbha6l1u0` runs the non-root Node 22
+  image on port 8080. Its internal `/health` reports
+  `{"status":"healthy","mode":"synthetic-showcase"}`.
+- `https://battleships.demos.lyledg.com` has canonical TLS and returns `401`
+  with `noindex` headers before redemption. The portfolio registry reports it
+  as `public-card`, `live`, and `demo`.
+- A temporary project-scoped invite successfully redeemed, loaded the real
+  game, scattered a fleet, engaged, and resolved one player/API/AI turn.
+  Browser acceptance confirmed the export/reset controls were hidden, there
+  was no page-width overflow, and the only API calls were config, game, and
+  fire on the same demo origin. No third-party resource request occurred.
+- Every temporary acceptance invite was revoked immediately after the check.
+- The product page is live at `https://lyledg.com/project/battleships` with
+  both checked 1600×930 technical PNG maps and desktop/mobile overflow passes.
