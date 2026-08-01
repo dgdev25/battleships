@@ -33,4 +33,4 @@ jobs:
           done
           test "$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/api/memory/export)" = 404
           test "$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/api/memory/reset)" = 404
-          test "$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/audio/ww2-sea-background.mp3)" = 404
+          test "$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/audio/ww2-sea-background.mp3)" = 200

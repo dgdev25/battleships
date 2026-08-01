@@ -21,8 +21,9 @@ The game selects short, isolated impacts from this recording at playback time,
 avoiding destructive re-encoding while giving repeated misses some variation.
 
 The following project-owner-provided recordings supply the foreground combat
-audio. They are copied unchanged from `data/sounds/`; no external attribution
-or licensing metadata was included with the supplied files.
+audio. They are copied unchanged from `data/sounds/`. The project owner
+confirmed on 2026-08-01 that these recordings are copyright-free and approved
+for public deployment.
 
 - `bomb-explosion.mp3` — SHA-1 `45e77cdb1c6ee1e3b0af88ab64af3af2b873e7f7`
 - `falling-bomb-whistle.mp3` — SHA-1 `7cde26458e84158cd556ab022fac88d91588b591`

@@ -26,10 +26,9 @@ after a player shot.
 - Public showcase mode withholds memory export/reset routes and hides both
   controls in the UI. It returns generic request errors and uses short HTTP
   request/header deadlines.
-- The source included six owner-supplied MP3 recordings without a documented
-  redistribution licence. They are excluded from the hosted image; documented
-  public-domain Ogg samples and Web Audio fallbacks remain. This does not alter
-  local development assets.
+- The project owner confirmed on 2026-08-01 that its six supplied MP3
+  recordings are copyright-free and may be included in the hosted image. The
+  existing audio-source note also records the public-domain Ogg samples.
 - Two 1600×930 browser-rendered technical **PNG** maps were created from CSS/HTML
   sources. Every text surface passed overflow checks; no technical SVG is used.
 - Local browser acceptance at 1440px and 390px found no page-width overflow,
@@ -49,7 +48,7 @@ The invite-gated platform remains the sole access boundary.
 1. Commit and push this readiness set to the owned source origin; add the
    existing project-level CI gate if it is absent.
 2. Register as `public-card`, build on Leaseweb, then confirm internal health,
-   external TLS/invite gate, absent MP3 assets, and an actual one-turn browser
+   external TLS/invite gate, bundled audio assets, and an actual one-turn browser
    flow with a temporary invite.
 3. Copy the checked PNGs to the portfolio's product-map asset set, add the
    catalogue preview record, and run desktop/mobile visual acceptance at

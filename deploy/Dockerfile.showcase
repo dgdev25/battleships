@@ -18,17 +18,6 @@ COPY --from=dependencies --chown=node:node /app/node_modules ./node_modules
 COPY --chown=node:node src ./src
 COPY --chown=node:node public ./public
 
-# The repository includes several owner-supplied MP3 recordings whose public
-# redistribution licence has not been documented. They are deliberately not
-# part of the hosted image; the client has Web Audio fallbacks and documented
-# public-domain Ogg samples.
-RUN rm -f public/audio/bomb-explosion.mp3 \
-    public/audio/falling-bomb-whistle.mp3 \
-    public/audio/ship-fire-rocket.mp3 \
-    public/audio/ww2-sea-background.mp3 \
-    public/audio/victory.mp3 \
-    public/audio/defeat.mp3
-
 USER node
 EXPOSE 8080
 CMD ["node", "src/server.mjs"]
