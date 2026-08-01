@@ -28,7 +28,6 @@ resources: small
 lifecycle:
   sleepable: true
   sleepAfterMinutes: 30
-requiresDatabase: false
 category: Interactive systems
 completion: 78
 statusLabel: Public anonymous gameplay demo · ephemeral learning state
